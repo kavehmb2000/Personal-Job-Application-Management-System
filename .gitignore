@@ -4,3 +4,7 @@
 .env
 .env.*
 !.env.example
+
+# Node.js and Next.js generated files
+node_modules/
+.next/
