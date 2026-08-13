@@ -13,7 +13,7 @@
 **Purpose**: Scaffold the single Next.js modular monolith and its developer tooling.
 
 - [ ] T001 Initialize the Next.js App Router TypeScript project and package scripts in `package.json`
-- [ ] T002 Create the planned application, component, library, Prisma, public, and test directory structure in `app/`, `components/`, `lib/`, `prisma/`, `public/`, and `tests/`
+- [x] T002 Create the planned application, component, library, Prisma, public, and test directory structure in `app/`, `components/`, `lib/`, `prisma/`, `public/`, and `tests/`
 - [ ] T003 [P] Configure TypeScript, ESLint, Prettier, and import aliases in `tsconfig.json`, `eslint.config.mjs`, and `prettier.config.mjs`
 - [ ] T004 [P] Add environment variable template and runtime validation in `.env.example` and `lib/config/env.ts`
 - [ ] T005 [P] Configure Vitest unit/integration projects and Playwright desktop/mobile projects in `vitest.config.ts` and `playwright.config.ts`
