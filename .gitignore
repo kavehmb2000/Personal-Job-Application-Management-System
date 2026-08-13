@@ -1,0 +1,6 @@
+﻿# Gemini CLI local credentials
+.gemini/.env
+# Local environment / secrets
+.env
+.env.*
+!.env.example
