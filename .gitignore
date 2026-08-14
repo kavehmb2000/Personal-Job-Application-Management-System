@@ -11,3 +11,7 @@
 # Node.js and Next.js generated files
 node_modules/
 .next/
+
+# Playwright
+playwright-report/
+test-results/

@@ -3,6 +3,8 @@
 dist/
 coverage/
 .git/
+playwright-report/
+test-results/
 
 .agents/
 .opencode/
