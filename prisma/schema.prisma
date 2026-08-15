@@ -6,6 +6,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// -----------------------------------------------------------------------------
+// Enums
+// -----------------------------------------------------------------------------
+
 enum AuditEventType {
   SIGN_IN
   SIGN_IN_DENIED
@@ -17,6 +21,165 @@ enum AuditEventType {
   DRIVE_AUTH_REVOKED
 }
 
+enum WorkplaceMode {
+  REMOTE
+  HYBRID
+  ONSITE
+  UNKNOWN
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  TEMPORARY
+  INTERNSHIP
+  FREELANCE
+  OTHER
+}
+
+enum VisaSponsorship {
+  YES
+  NO
+  UNKNOWN
+}
+
+enum ApplicationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum SubmissionMethod {
+  COMPANY_WEBSITE
+  JOB_BOARD
+  EMAIL
+  REFERRAL
+  RECRUITER
+  OTHER
+}
+
+enum TimelineEventType {
+  DISCOVERY
+  SUBMISSION
+  STATUS_CHANGE
+  COMMUNICATION
+  INTERVIEW_INVITATION
+  INTERVIEW_COMPLETION
+  CHALLENGE_RECEIVED
+  CHALLENGE_SUBMITTED
+  REJECTION
+  OFFER
+  NOTE
+  CUSTOM
+}
+
+enum DocumentType {
+  CV
+  COVER_LETTER
+  CERTIFICATE
+  PORTFOLIO
+  CODING_CHALLENGE
+  PRESENTATION
+  REFERENCE
+  OTHER
+}
+
+enum DocumentStatus {
+  ACTIVE
+  ARCHIVED
+  DELETED
+  EXTERNAL
+}
+
+enum CoverLetterVariantType {
+  GENERIC
+  COMPANY_SPECIFIC
+  POSITION_SPECIFIC
+}
+
+enum EvidenceCategory {
+  PROJECT
+  PUBLICATION
+  PRESENTATION
+  CERTIFICATION
+  GITHUB
+  PORTFOLIO
+  PROFESSIONAL_EXPERIENCE
+  OTHER
+}
+
+enum ContactRoleType {
+  RECRUITER
+  HIRING_MANAGER
+  INTERVIEWER
+  REFERRAL
+  HR
+  OTHER
+}
+
+enum CommunicationDirection {
+  INCOMING
+  OUTGOING
+}
+
+enum InterviewType {
+  SCREENING
+  TECHNICAL
+  BEHAVIORAL
+  HR
+  MANAGERIAL
+  PANEL
+  ONSITE
+  FINAL
+  OTHER
+}
+
+enum PreparationTaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PreparationTaskPriority {
+  LOW
+  NORMAL
+  HIGH
+}
+
+enum LinkCategory {
+  JOB_DESCRIPTION
+  COMPANY
+  PRODUCT
+  TECHNOLOGY
+  PREPARATION
+  RESEARCH
+  OTHER
+}
+
+enum StorageProvider {
+  GOOGLE_DRIVE
+  EXTERNAL
+}
+
+enum ApplicationDocumentPurpose {
+  SUBMITTED_CV
+  SUBMITTED_COVER_LETTER
+  CODING_CHALLENGE
+  TAKE_HOME
+  PRESENTATION
+  ADDITIONAL_INFORMATION
+  INTERVIEW_MATERIAL
+  REFERENCE
+  OTHER
+}
+
+// -----------------------------------------------------------------------------
+// Identity and ownership
+// -----------------------------------------------------------------------------
+
 model OwnerAccount {
   id            String  @id @default(uuid())
   googleSubject String  @unique
@@ -27,7 +190,14 @@ model OwnerAccount {
   updatedAt    DateTime  @updatedAt
   lastSignInAt DateTime?
 
-  auditEvents AuditEvent[]
+  applications      Application[]
+  documentAssets    DocumentAsset[]
+  cvProfiles        CVProfile[]
+  coverLetters      CoverLetter[]
+  evidenceItems     EvidenceItem[]
+  contacts          Contact[]
+  lifecycleStatuses LifecycleStatus[]
+  auditEvents       AuditEvent[]
 }
 
 model AuditEvent {
@@ -39,18 +209,549 @@ model AuditEvent {
   targetId   String?
   metadata   Json?
 
-  owner OwnerAccount @relation(fields: [ownerId], references: [id])
+  owner OwnerAccount @relation(fields: [ownerId], references: [id], onDelete: Restrict)
 
   @@index([ownerId, occurredAt])
+  @@index([targetType, targetId])
 }
 
+// -----------------------------------------------------------------------------
+// Configurable application taxonomy
+// -----------------------------------------------------------------------------
+
 model LifecycleStatus {
-  id         String  @id @default(uuid())
-  name       String  @unique
+  id      String @id @default(uuid())
+  ownerId String
+
+  name       String
   sortOrder  Int
   isTerminal Boolean @default(false)
   isActive   Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  owner        OwnerAccount  @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  applications Application[]
+
+  @@unique([ownerId, name])
+  @@index([ownerId, sortOrder])
+}
+
+model RoleFamily {
+  id        String  @id @default(uuid())
+  name      String  @unique
+  sortOrder Int
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applications Application[]
+  cvProfiles   CVProfile[]
+}
+
+// -----------------------------------------------------------------------------
+// Application aggregate
+// -----------------------------------------------------------------------------
+
+model Application {
+  id      String @id @default(uuid())
+  ownerId String
+
+  version    Int       @default(1)
+  archivedAt DateTime?
+
+  companyName   String
+  positionTitle String
+
+  jobUrl     String?
+  companyUrl String?
+  location   String?
+  country    String?
+
+  workplaceMode   WorkplaceMode?
+  employmentType  EmploymentType?
+  salaryText      String?
+  visaSponsorship VisaSponsorship?
+  relocationText  String?
+
+  source       String
+  discoveredAt DateTime
+  appliedAt    DateTime?
+
+  statusId      String
+  priority      ApplicationPriority @default(NORMAL)
+  fitScore      Int?
+  roleFamilyId  String?
+  notesMarkdown String?
+
+  nextActionTitle String?
+  nextActionDueAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner      OwnerAccount    @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  status     LifecycleStatus @relation(fields: [statusId], references: [id], onDelete: Restrict)
+  roleFamily RoleFamily?     @relation(fields: [roleFamilyId], references: [id], onDelete: SetNull)
+
+  submission           Submission?
+  timelineEvents       TimelineEvent[]
+  applicationDocuments ApplicationDocument[]
+  applicationEvidence  ApplicationEvidence[]
+  applicationContacts  ApplicationContact[]
+  communications       Communication[]
+  interviews           Interview[]
+  preparationTasks     PreparationTask[]
+  preparationNotes     PreparationNote[]
+  relevantLinks        RelevantLink[]
+
+  @@index([ownerId, archivedAt])
+  @@index([ownerId, statusId])
+  @@index([ownerId, discoveredAt])
+  @@index([ownerId, appliedAt])
+  @@index([ownerId, priority])
+  @@index([roleFamilyId])
+  @@index([nextActionDueAt])
+}
+
+// -----------------------------------------------------------------------------
+// Submission
+// -----------------------------------------------------------------------------
+
+model Submission {
+  id            String @id @default(uuid())
+  applicationId String @unique
+
+  submittedAt DateTime
+  method      SubmissionMethod
+  notes       String?
+
+  cvSnapshot          Json
+  coverLetterSnapshot Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([submittedAt])
+}
+
+// -----------------------------------------------------------------------------
+// Timeline
+// -----------------------------------------------------------------------------
+
+model TimelineEvent {
+  id            String @id @default(uuid())
+  applicationId String
+
+  occurredAt          DateTime
+  type                TimelineEventType
+  title               String
+  descriptionMarkdown String?
+
+  contactId       String?
+  communicationId String?
+  externalUrl     String?
+  systemGenerated Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  application   Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  contact       Contact?       @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  communication Communication? @relation(fields: [communicationId], references: [id], onDelete: SetNull)
+
+  documents              ApplicationDocument[]
+  timelineEventDocuments TimelineEventDocument[]
+
+  @@index([applicationId, occurredAt])
+  @@index([contactId])
+  @@index([communicationId])
+}
+
+// -----------------------------------------------------------------------------
+// Reusable documents and assets
+// -----------------------------------------------------------------------------
+
+model DocumentAsset {
+  id      String @id @default(uuid())
+  ownerId String
+
+  version      Int            @default(1)
+  name         String
+  documentType DocumentType
+  versionLabel String?
+  description  String?
+  status       DocumentStatus @default(ACTIVE)
+  isReusable   Boolean        @default(true)
+
+  storageProvider  StorageProvider?
+  storageReference String?
+  externalUrl      String?
+  originalFilename String?
+  mimeType         String?
+  sizeBytes        BigInt?
+  checksum         String?
+
+  archivedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner OwnerAccount @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+
+  applicationDocuments   ApplicationDocument[]
+  timelineDocuments      TimelineEventDocument[]
+  communicationDocuments CommunicationDocument[]
+
+  cvProfiles   CVProfile[]
+  coverLetters CoverLetter[]
+
+  @@index([ownerId, archivedAt])
+  @@index([ownerId, documentType])
+  @@index([ownerId, isReusable])
+}
+
+model ApplicationDocument {
+  id            String @id @default(uuid())
+  applicationId String
+  documentId    String
+
+  purpose ApplicationDocumentPurpose
+  note    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  application Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  document    DocumentAsset @relation(fields: [documentId], references: [id], onDelete: Restrict)
+
+  timelineEvents TimelineEvent[]
+
+  @@unique([applicationId, documentId, purpose])
+  @@index([applicationId, purpose])
+  @@index([documentId])
+}
+
+model TimelineEventDocument {
+  id         String @id @default(uuid())
+  eventId    String
+  documentId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event    TimelineEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  document DocumentAsset @relation(fields: [documentId], references: [id], onDelete: Restrict)
+
+  @@unique([eventId, documentId])
+  @@index([documentId])
+}
+
+// -----------------------------------------------------------------------------
+// CV profiles
+// -----------------------------------------------------------------------------
+
+model CVProfile {
+  id      String @id @default(uuid())
+  ownerId String
+
+  name             String
+  roleFamilyId     String?
+  versionLabel     String?
+  createdOn        DateTime
+  lastModifiedOn   DateTime
+  notes            String?
+  skillsEmphasized String?
+
+  documentId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner      OwnerAccount   @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  roleFamily RoleFamily?    @relation(fields: [roleFamilyId], references: [id], onDelete: SetNull)
+  document   DocumentAsset? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@index([ownerId])
+  @@index([roleFamilyId])
+}
+
+// -----------------------------------------------------------------------------
+// Cover letters
+// -----------------------------------------------------------------------------
+
+model CoverLetter {
+  id      String @id @default(uuid())
+  ownerId String
+
+  name         String
+  variantType  CoverLetterVariantType
+  versionLabel String?
+
+  companyName   String?
+  positionTitle String?
+
+  markdownText String?
+  notes        String?
+
+  createdOn      DateTime
+  lastModifiedOn DateTime
+
+  documentId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner    OwnerAccount   @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  document DocumentAsset? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@index([ownerId])
+  @@index([ownerId, variantType])
+}
+
+// -----------------------------------------------------------------------------
+// Professional evidence
+// -----------------------------------------------------------------------------
+
+model EvidenceItem {
+  id      String @id @default(uuid())
+  ownerId String
+
+  title              String
+  description        String?
+  url                String?
+  category           EvidenceCategory?
+  technologies       String?
+  skillsDemonstrated String?
+  businessImpact     String?
+  relevantRoleTypes  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner        OwnerAccount          @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  applications ApplicationEvidence[]
+
+  @@index([ownerId])
+}
+
+model ApplicationEvidence {
+  id            String @id @default(uuid())
+  applicationId String
+  evidenceId    String
+
+  relevanceNote String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  application Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  evidence    EvidenceItem @relation(fields: [evidenceId], references: [id], onDelete: Restrict)
+
+  @@unique([applicationId, evidenceId])
+  @@index([evidenceId])
+}
+
+// -----------------------------------------------------------------------------
+// Contacts
+// -----------------------------------------------------------------------------
+
+model Contact {
+  id      String @id @default(uuid())
+  ownerId String
+
+  name         String
+  roleType     ContactRoleType?
+  organization String?
+  email        String?
+  phone        String?
+  profileUrl   String?
+  notes        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner                 OwnerAccount           @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  applications          ApplicationContact[]
+  timelineEvents        TimelineEvent[]
+  communications        Communication[]
+  interviewParticipants InterviewParticipant[]
+
+  @@index([ownerId])
+  @@index([ownerId, email])
+}
+
+model ApplicationContact {
+  id            String @id @default(uuid())
+  applicationId String
+  contactId     String
+
+  contextualRole String?
+  notes          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  contact     Contact     @relation(fields: [contactId], references: [id], onDelete: Restrict)
+
+  @@unique([applicationId, contactId])
+  @@index([contactId])
+}
+
+// -----------------------------------------------------------------------------
+// Communications
+// -----------------------------------------------------------------------------
+
+model Communication {
+  id            String @id @default(uuid())
+  applicationId String
+
+  occurredAt DateTime
+  direction  CommunicationDirection
+
+  sender       String?
+  recipient    String?
+  subject      String?
+  bodyMarkdown String?
+
+  contactId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  contact     Contact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  timelineEvents TimelineEvent[]
+  documents      CommunicationDocument[]
+
+  @@index([applicationId, occurredAt])
+  @@index([contactId])
+}
+
+model CommunicationDocument {
+  id              String @id @default(uuid())
+  communicationId String
+  documentId      String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  communication Communication @relation(fields: [communicationId], references: [id], onDelete: Cascade)
+  document      DocumentAsset @relation(fields: [documentId], references: [id], onDelete: Restrict)
+
+  @@unique([communicationId, documentId])
+  @@index([documentId])
+}
+
+// -----------------------------------------------------------------------------
+// Interviews
+// -----------------------------------------------------------------------------
+
+model Interview {
+  id            String @id @default(uuid())
+  applicationId String
+
+  type InterviewType
+
+  scheduledDate DateTime?
+  startTime     DateTime?
+  endTime       DateTime?
+  timeZone      String?
+
+  platform   String?
+  meetingUrl String?
+
+  preparationStatus String?
+  notesMarkdown     String?
+  outcome           String?
+  followUpActions   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  application  Application            @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  participants InterviewParticipant[]
+
+  @@index([applicationId, scheduledDate])
+  @@index([startTime])
+}
+
+model InterviewParticipant {
+  id          String @id @default(uuid())
+  interviewId String
+  contactId   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  interview Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  contact   Contact   @relation(fields: [contactId], references: [id], onDelete: Restrict)
+
+  @@unique([interviewId, contactId])
+  @@index([contactId])
+}
+
+// -----------------------------------------------------------------------------
+// Preparation
+// -----------------------------------------------------------------------------
+
+model PreparationTask {
+  id            String @id @default(uuid())
+  applicationId String
+
+  title               String
+  descriptionMarkdown String?
+  status              PreparationTaskStatus   @default(TODO)
+  priority            PreparationTaskPriority @default(NORMAL)
+  dueDate             DateTime?
+  completedDate       DateTime?
+
+  version Int @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, status])
+  @@index([applicationId, dueDate])
+}
+
+model PreparationNote {
+  id            String @id @default(uuid())
+  applicationId String
+
+  title        String
+  bodyMarkdown String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+}
+
+model RelevantLink {
+  id            String @id @default(uuid())
+  applicationId String
+
+  title       String
+  url         String
+  category    LinkCategory?
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([applicationId, category])
 }
