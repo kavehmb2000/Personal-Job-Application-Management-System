@@ -14,10 +14,10 @@
 
 - [ ] T001 Initialize the Next.js App Router TypeScript project and package scripts in `package.json`
 - [x] T002 Create the planned application, component, library, Prisma, public, and test directory structure in `app/`, `components/`, `lib/`, `prisma/`, `public/`, and `tests/`
-- [ ] T003 [P] Configure TypeScript, ESLint, Prettier, and import aliases in `tsconfig.json`, `eslint.config.mjs`, and `prettier.config.mjs`
-- [ ] T004 [P] Add environment variable template and runtime validation in `.env.example` and `lib/config/env.ts`
-- [ ] T005 [P] Configure Vitest unit/integration projects and Playwright desktop/mobile projects in `vitest.config.ts` and `playwright.config.ts`
-- [ ] T006 [P] Add the PWA manifest, icons placeholders, and service-worker build configuration in `public/manifest.webmanifest`, `public/icons/`, and `next.config.ts`
+- [x] T003 [P] Configure TypeScript, ESLint, Prettier, and import aliases in `tsconfig.json`, `eslint.config.mjs`, and `prettier.config.mjs`
+- [x] T004 [P] Add environment variable template and runtime validation in `.env.example` and `lib/config/env.ts`
+- [x] T005 [P] Configure Vitest unit/integration projects and Playwright desktop/mobile projects in `vitest.config.ts` and `playwright.config.ts`
+- [x] T006 [P] Add the PWA manifest, icons placeholders, and service-worker build configuration in `public/manifest.webmanifest`, `public/icons/`, and `next.config.ts`
 
 ---
 
@@ -27,16 +27,16 @@
 
 **⚠️ CRITICAL**: Complete this phase before starting any user-story phase.
 
-- [ ] T007 Define the Prisma datasource, generators, common enums, ownership/account records, audit events, lifecycle statuses, and migration baseline in `prisma/schema.prisma`
-- [ ] T008 Create the initial migration and seed configured-owner-safe default statuses and role families in `prisma/migrations/` and `prisma/seed.ts`
-- [ ] T009 [P] Implement Auth.js Google OIDC configuration, configured-owner admission, and server session helpers in `lib/auth/auth.ts` and `app/api/auth/[...nextauth]/route.ts`
-- [ ] T010 [P] Implement explicit current-owner resolution and repository scoping helpers in `lib/auth/current-owner.ts` and `lib/repositories/owner-scope.ts`
-- [ ] T011 [P] Implement shared Zod request validation, typed domain errors, HTTP error mapping, and safe audit logging in `lib/validation/`, `lib/domain/errors.ts`, and `lib/services/audit-service.ts`
-- [ ] T012 [P] Define the provider-neutral `StorageProvider` interface, provider reference types, and fake provider test double in `lib/storage/storage-provider.ts` and `tests/fakes/storage-provider.ts`
-- [ ] T013 [P] Implement reusable optimistic-concurrency version/ETag parsing and conflict response helpers in `lib/domain/concurrency.ts` and `lib/services/conflict-service.ts`
-- [ ] T014 Implement authenticated route/layout protection and the responsive application shell in `app/(authenticated)/layout.tsx`, `app/layout.tsx`, and `middleware.ts`
-- [ ] T015 Implement shared accessible UI primitives, empty/error/loading states, and online/offline availability indicator in `components/ui/` and `components/shared/connection-status.tsx`
-- [ ] T016 Add foundational authentication, owner-isolation, validation, and concurrency tests in `tests/integration/auth.test.ts`, `tests/unit/owner-scope.test.ts`, and `tests/unit/concurrency.test.ts`
+- [x] T007 Define the Prisma datasource, generators, common enums, ownership/account records, audit events, lifecycle statuses, and migration baseline in `prisma/schema.prisma`
+- [x] T008 Create the initial migration and seed configured-owner-safe default statuses and role families in `prisma/migrations/` and `prisma/seed.ts`
+- [x] T009 [P] Implement Auth.js Google OIDC configuration, configured-owner admission, and server session helpers in `lib/auth/auth.ts` and `app/api/auth/[...nextauth]/route.ts`
+- [x] T010 [P] Implement explicit current-owner resolution and repository scoping helpers in `lib/auth/current-owner.ts` and `lib/repositories/owner-scope.ts`
+- [x] T011 [P] Implement shared Zod request validation, typed domain errors, HTTP error mapping, and safe audit logging in `lib/validation/`, `lib/domain/errors.ts`, and `lib/services/audit-service.ts`
+- [x] T012 [P] Define the provider-neutral `StorageProvider` interface, provider reference types, and fake provider test double in `lib/storage/storage-provider.ts` and `tests/fakes/storage-provider.ts`
+- [x] T013 [P] Implement reusable optimistic-concurrency version/ETag parsing and conflict response helpers in `lib/domain/concurrency.ts` and `lib/services/conflict-service.ts`
+- [x] T014 Implement authenticated route/layout protection and the responsive application shell in `app/(authenticated)/layout.tsx`, `app/layout.tsx`, and `middleware.ts`
+- [x] T015 Implement shared accessible UI primitives, empty/error/loading states, and online/offline availability indicator in `components/ui/` and `components/shared/connection-status.tsx`
+- [x] T016 Add foundational authentication, owner-isolation, validation, and concurrency tests in `tests/integration/auth.test.ts`, `tests/unit/owner-scope.test.ts`, and `tests/unit/concurrency.test.ts`
 
 **Checkpoint**: An authenticated configured owner reaches a responsive shell; unauthorized requests are denied; all repositories can require owner scope.
 
