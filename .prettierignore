@@ -5,6 +5,7 @@ coverage/
 .git/
 playwright-report/
 test-results/
+public/sw.js
 
 .agents/
 .opencode/

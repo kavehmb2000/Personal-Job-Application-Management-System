@@ -1,0 +1,56 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum AuditEventType {
+  SIGN_IN
+  SIGN_IN_DENIED
+  EXPORT_REQUESTED
+  ARCHIVE
+  RESTORE
+  PERMANENT_DELETE
+  DRIVE_AUTHORIZED
+  DRIVE_AUTH_REVOKED
+}
+
+model OwnerAccount {
+  id            String  @id @default(uuid())
+  googleSubject String  @unique
+  email         String  @unique
+  displayName   String?
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastSignInAt DateTime?
+
+  auditEvents AuditEvent[]
+}
+
+model AuditEvent {
+  id         String         @id @default(uuid())
+  ownerId    String
+  type       AuditEventType
+  occurredAt DateTime       @default(now())
+  targetType String?
+  targetId   String?
+  metadata   Json?
+
+  owner OwnerAccount @relation(fields: [ownerId], references: [id])
+
+  @@index([ownerId, occurredAt])
+}
+
+model LifecycleStatus {
+  id         String  @id @default(uuid())
+  name       String  @unique
+  sortOrder  Int
+  isTerminal Boolean @default(false)
+  isActive   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
