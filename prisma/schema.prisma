@@ -21,27 +21,14 @@ enum AuditEventType {
   DRIVE_AUTH_REVOKED
 }
 
-enum WorkplaceMode {
-  REMOTE
-  HYBRID
-  ONSITE
-  UNKNOWN
-}
-
-enum EmploymentType {
-  FULL_TIME
-  PART_TIME
-  CONTRACT
-  TEMPORARY
-  INTERNSHIP
-  FREELANCE
-  OTHER
-}
-
-enum VisaSponsorship {
-  YES
-  NO
-  UNKNOWN
+enum LifecycleStateKey {
+  DISCOVERED
+  SUBMITTED
+  IN_PROGRESS
+  OFFER
+  CLOSED
+  CANCELLED
+  REJECTED
 }
 
 enum ApplicationPriority {
@@ -51,63 +38,45 @@ enum ApplicationPriority {
   URGENT
 }
 
-enum SubmissionMethod {
-  COMPANY_WEBSITE
-  JOB_BOARD
-  EMAIL
-  REFERRAL
-  RECRUITER
-  OTHER
-}
+enum OpportunityEventType {
+  OPPORTUNITY_CREATED
+  OPPORTUNITY_SUBMITTED
+  OPPORTUNITY_IN_PROGRESS
+  OFFER_RECEIVED
+  OPPORTUNITY_CLOSED
+  OPPORTUNITY_CANCELLED
+  OPPORTUNITY_REJECTED
 
-enum TimelineEventType {
-  DISCOVERY
-  SUBMISSION
-  STATUS_CHANGE
-  COMMUNICATION
-  INTERVIEW_INVITATION
-  INTERVIEW_COMPLETION
+  INTERVIEW_SCHEDULED
+  INTERVIEW_COMPLETED
+  DOCUMENT_REQUESTED
+  TRANSCRIPT_REQUESTED
+  DIPLOMA_REQUESTED
+  CERTIFICATE_REQUESTED
+  LANGUAGE_PROOF_REQUESTED
   CHALLENGE_RECEIVED
   CHALLENGE_SUBMITTED
-  REJECTION
-  OFFER
-  NOTE
+  COMMUNICATION
   CUSTOM
 }
 
-enum DocumentType {
+enum ArtefactType {
   CV
   COVER_LETTER
+  JOB_DESCRIPTION
+  COMPANY_RESEARCH
+  PRESENTATION
+  PORTFOLIO_EVIDENCE
+  TRANSCRIPT
   CERTIFICATE
-  PORTFOLIO
-  CODING_CHALLENGE
-  PRESENTATION
-  REFERENCE
+  AUDIO
+  VIDEO
   OTHER
 }
 
-enum DocumentStatus {
-  ACTIVE
-  ARCHIVED
-  DELETED
-  EXTERNAL
-}
-
-enum CoverLetterVariantType {
-  GENERIC
-  COMPANY_SPECIFIC
-  POSITION_SPECIFIC
-}
-
-enum EvidenceCategory {
-  PROJECT
-  PUBLICATION
-  PRESENTATION
-  CERTIFICATION
-  GITHUB
-  PORTFOLIO
-  PROFESSIONAL_EXPERIENCE
-  OTHER
+enum CommunicationDirection {
+  INCOMING
+  OUTGOING
 }
 
 enum ContactRoleType {
@@ -119,61 +88,31 @@ enum ContactRoleType {
   OTHER
 }
 
-enum CommunicationDirection {
-  INCOMING
-  OUTGOING
-}
-
-enum InterviewType {
-  SCREENING
-  TECHNICAL
-  BEHAVIORAL
-  HR
-  MANAGERIAL
-  PANEL
-  ONSITE
-  FINAL
-  OTHER
-}
-
-enum PreparationTaskStatus {
+enum UserActionStatus {
   TODO
   IN_PROGRESS
   COMPLETED
   CANCELLED
 }
 
-enum PreparationTaskPriority {
+enum UserActionPriority {
   LOW
   NORMAL
   HIGH
 }
 
-enum LinkCategory {
-  JOB_DESCRIPTION
-  COMPANY
-  PRODUCT
-  TECHNOLOGY
-  PREPARATION
-  RESEARCH
+enum ScheduledEventType {
+  INTERVIEW
+  RECRUITER_CALL
+  PRESENTATION
+  CHALLENGE_DEADLINE
+  FOLLOW_UP
   OTHER
 }
 
 enum StorageProvider {
   GOOGLE_DRIVE
   EXTERNAL
-}
-
-enum ApplicationDocumentPurpose {
-  SUBMITTED_CV
-  SUBMITTED_COVER_LETTER
-  CODING_CHALLENGE
-  TAKE_HOME
-  PRESENTATION
-  ADDITIONAL_INFORMATION
-  INTERVIEW_MATERIAL
-  REFERENCE
-  OTHER
 }
 
 // -----------------------------------------------------------------------------
@@ -190,14 +129,12 @@ model OwnerAccount {
   updatedAt    DateTime  @updatedAt
   lastSignInAt DateTime?
 
-  applications      Application[]
-  documentAssets    DocumentAsset[]
-  cvProfiles        CVProfile[]
-  coverLetters      CoverLetter[]
-  evidenceItems     EvidenceItem[]
-  contacts          Contact[]
-  lifecycleStatuses LifecycleStatus[]
-  auditEvents       AuditEvent[]
+  opportunities   Opportunity[]
+  artefacts       Artefact[]
+  lifecycleStates LifecycleStatus[]
+  roleFamilies    RoleFamily[]
+  contacts        Contact[]
+  auditEvents     AuditEvent[]
 }
 
 model AuditEvent {
@@ -216,104 +153,245 @@ model AuditEvent {
 }
 
 // -----------------------------------------------------------------------------
-// Configurable application taxonomy
+// Lifecycle configuration
 // -----------------------------------------------------------------------------
 
 model LifecycleStatus {
   id      String @id @default(uuid())
   ownerId String
 
-  name       String
-  sortOrder  Int
+  // Stable semantic identity. Labels may be customized without changing
+  // the meaning of the lifecycle state.
+  key       LifecycleStateKey
+  label     String
+  sortOrder Int
+
   isTerminal Boolean @default(false)
   isActive   Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  owner        OwnerAccount  @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  applications Application[]
+  owner         OwnerAccount          @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  opportunities Opportunity[]
+  outgoing      LifecycleTransition[] @relation("LifecycleTransitionFrom")
+  incoming      LifecycleTransition[] @relation("LifecycleTransitionTo")
 
-  @@unique([ownerId, name])
+  @@unique([ownerId, key])
+  @@unique([ownerId, label])
   @@index([ownerId, sortOrder])
 }
 
+model LifecycleTransition {
+  id String @id @default(uuid())
+
+  fromStatusId String
+  toStatusId   String
+
+  createdAt DateTime @default(now())
+
+  fromStatus LifecycleStatus @relation("LifecycleTransitionFrom", fields: [fromStatusId], references: [id], onDelete: Cascade)
+  toStatus   LifecycleStatus @relation("LifecycleTransitionTo", fields: [toStatusId], references: [id], onDelete: Cascade)
+
+  @@unique([fromStatusId, toStatusId])
+  @@index([fromStatusId])
+  @@index([toStatusId])
+}
+
+// -----------------------------------------------------------------------------
+// Supporting taxonomy
+// -----------------------------------------------------------------------------
+
 model RoleFamily {
-  id        String  @id @default(uuid())
-  name      String  @unique
+  id      String @id @default(uuid())
+  ownerId String
+
+  name      String
   sortOrder Int
   isActive  Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  applications Application[]
-  cvProfiles   CVProfile[]
+  owner         OwnerAccount  @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  opportunities Opportunity[]
+
+  @@unique([ownerId, name])
+  @@index([ownerId, sortOrder])
 }
 
 // -----------------------------------------------------------------------------
-// Application aggregate
+// Opportunity aggregate
 // -----------------------------------------------------------------------------
 
-model Application {
+model Opportunity {
   id      String @id @default(uuid())
   ownerId String
 
   version    Int       @default(1)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
   archivedAt DateTime?
 
   companyName   String
   positionTitle String
 
-  jobUrl     String?
-  companyUrl String?
-  location   String?
-  country    String?
+  jobUrl   String?
+  location String?
+  country  String?
 
-  workplaceMode   WorkplaceMode?
-  employmentType  EmploymentType?
-  salaryText      String?
-  visaSponsorship VisaSponsorship?
-  relocationText  String?
+  source   String?
+  fitScore Int?
+  priority ApplicationPriority @default(NORMAL)
 
-  source       String
-  discoveredAt DateTime
-  appliedAt    DateTime?
+  discoveredAt DateTime @default(now())
 
-  statusId      String
-  priority      ApplicationPriority @default(NORMAL)
-  fitScore      Int?
-  roleFamilyId  String?
-  notesMarkdown String?
+  statusId     String
+  roleFamilyId String?
 
   nextActionTitle String?
   nextActionDueAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   owner      OwnerAccount    @relation(fields: [ownerId], references: [id], onDelete: Restrict)
   status     LifecycleStatus @relation(fields: [statusId], references: [id], onDelete: Restrict)
   roleFamily RoleFamily?     @relation(fields: [roleFamilyId], references: [id], onDelete: SetNull)
 
-  submission           Submission?
-  timelineEvents       TimelineEvent[]
-  applicationDocuments ApplicationDocument[]
-  applicationEvidence  ApplicationEvidence[]
-  applicationContacts  ApplicationContact[]
-  communications       Communication[]
-  interviews           Interview[]
-  preparationTasks     PreparationTask[]
-  preparationNotes     PreparationNote[]
-  relevantLinks        RelevantLink[]
+  submission      Submission?
+  events          OpportunityEvent[]
+  notes           OpportunityNote[]
+  actions         UserAction[]
+  scheduledEvents ScheduledEvent[]
+  artefacts       OpportunityArtefact[]
+  communications  Communication[]
+  contacts        OpportunityContact[]
 
   @@index([ownerId, archivedAt])
   @@index([ownerId, statusId])
   @@index([ownerId, discoveredAt])
-  @@index([ownerId, appliedAt])
   @@index([ownerId, priority])
-  @@index([roleFamilyId])
+  @@index([ownerId, roleFamilyId])
+  @@index([ownerId, country])
+  @@index([ownerId, source])
   @@index([nextActionDueAt])
+}
+
+// -----------------------------------------------------------------------------
+// Opportunity notes
+// -----------------------------------------------------------------------------
+
+model OpportunityNote {
+  id            String @id @default(uuid())
+  opportunityId String
+
+  title        String?
+  bodyMarkdown String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@index([opportunityId, createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// Opportunity lifecycle and domain events
+// -----------------------------------------------------------------------------
+
+model OpportunityEvent {
+  id            String @id @default(uuid())
+  opportunityId String
+
+  occurredAt DateTime
+  type       OpportunityEventType
+
+  title               String
+  descriptionMarkdown String?
+
+  systemGenerated Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  artefacts EventArtefact[]
+
+  @@index([opportunityId, occurredAt])
+  @@index([opportunityId, type])
+}
+
+// -----------------------------------------------------------------------------
+// Artefact aggregate
+// -----------------------------------------------------------------------------
+
+model Artefact {
+  id      String @id @default(uuid())
+  ownerId String
+
+  name        String
+  type        ArtefactType
+  description String?
+
+  // At least one of contentMarkdown, externalUrl or storageReference
+  // must be present. This invariant is enforced by the domain/service layer.
+  contentMarkdown String?
+  externalUrl     String?
+
+  storageProvider  StorageProvider?
+  storageReference String?
+
+  mimeType String?
+
+  archivedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  owner OwnerAccount @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+
+  opportunities          OpportunityArtefact[]
+  submissionCv           Submission[]            @relation("SubmissionCvArtefact")
+  submissionCoverLetters Submission[]            @relation("SubmissionCoverLetterArtefact")
+  eventLinks             EventArtefact[]
+  communications         CommunicationArtefact[]
+
+  @@index([ownerId, archivedAt])
+  @@index([ownerId, type])
+}
+
+// -----------------------------------------------------------------------------
+// Opportunity–Artefact association
+// -----------------------------------------------------------------------------
+
+model OpportunityArtefact {
+  id            String @id @default(uuid())
+  opportunityId String
+  artefactId    String
+
+  createdAt DateTime @default(now())
+
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  artefact    Artefact    @relation(fields: [artefactId], references: [id], onDelete: Restrict)
+
+  @@unique([opportunityId, artefactId])
+  @@index([artefactId])
+}
+
+// -----------------------------------------------------------------------------
+// Event–Artefact association
+// -----------------------------------------------------------------------------
+
+model EventArtefact {
+  id         String @id @default(uuid())
+  eventId    String
+  artefactId String
+
+  createdAt DateTime @default(now())
+
+  event    OpportunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  artefact Artefact         @relation(fields: [artefactId], references: [id], onDelete: Restrict)
+
+  @@unique([eventId, artefactId])
+  @@index([artefactId])
 }
 
 // -----------------------------------------------------------------------------
@@ -322,238 +400,85 @@ model Application {
 
 model Submission {
   id            String @id @default(uuid())
-  applicationId String @unique
+  opportunityId String @unique
 
   submittedAt DateTime
-  method      SubmissionMethod
+  method      String?
   notes       String?
 
-  cvSnapshot          Json
-  coverLetterSnapshot Json?
+  cvArtefactId          String?
+  coverLetterArtefactId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  cvArtefact          Artefact? @relation("SubmissionCvArtefact", fields: [cvArtefactId], references: [id], onDelete: Restrict)
+  coverLetterArtefact Artefact? @relation("SubmissionCoverLetterArtefact", fields: [coverLetterArtefactId], references: [id], onDelete: Restrict)
 
   @@index([submittedAt])
+  @@index([cvArtefactId])
+  @@index([coverLetterArtefactId])
 }
 
 // -----------------------------------------------------------------------------
-// Timeline
+// User actions
 // -----------------------------------------------------------------------------
 
-model TimelineEvent {
+model UserAction {
   id            String @id @default(uuid())
-  applicationId String
+  opportunityId String
 
-  occurredAt          DateTime
-  type                TimelineEventType
   title               String
   descriptionMarkdown String?
 
-  contactId       String?
-  communicationId String?
-  externalUrl     String?
-  systemGenerated Boolean @default(false)
+  status   UserActionStatus   @default(TODO)
+  priority UserActionPriority @default(NORMAL)
+
+  dueAt       DateTime?
+  completedAt DateTime?
+
+  version Int @default(1)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  application   Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  contact       Contact?       @relation(fields: [contactId], references: [id], onDelete: SetNull)
-  communication Communication? @relation(fields: [communicationId], references: [id], onDelete: SetNull)
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
 
-  documents              ApplicationDocument[]
-  timelineEventDocuments TimelineEventDocument[]
-
-  @@index([applicationId, occurredAt])
-  @@index([contactId])
-  @@index([communicationId])
+  @@index([opportunityId, status])
+  @@index([opportunityId, dueAt])
 }
 
 // -----------------------------------------------------------------------------
-// Reusable documents and assets
+// Scheduled events
 // -----------------------------------------------------------------------------
 
-model DocumentAsset {
-  id      String @id @default(uuid())
-  ownerId String
-
-  version      Int            @default(1)
-  name         String
-  documentType DocumentType
-  versionLabel String?
-  description  String?
-  status       DocumentStatus @default(ACTIVE)
-  isReusable   Boolean        @default(true)
-
-  storageProvider  StorageProvider?
-  storageReference String?
-  externalUrl      String?
-  originalFilename String?
-  mimeType         String?
-  sizeBytes        BigInt?
-  checksum         String?
-
-  archivedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  owner OwnerAccount @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-
-  applicationDocuments   ApplicationDocument[]
-  timelineDocuments      TimelineEventDocument[]
-  communicationDocuments CommunicationDocument[]
-
-  cvProfiles   CVProfile[]
-  coverLetters CoverLetter[]
-
-  @@index([ownerId, archivedAt])
-  @@index([ownerId, documentType])
-  @@index([ownerId, isReusable])
-}
-
-model ApplicationDocument {
+model ScheduledEvent {
   id            String @id @default(uuid())
-  applicationId String
-  documentId    String
+  opportunityId String
 
-  purpose ApplicationDocumentPurpose
-  note    String?
+  type  ScheduledEventType
+  title String
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  scheduledAt DateTime
+  endAt       DateTime?
+  timeZone    String?
 
-  application Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  document    DocumentAsset @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  platform   String?
+  meetingUrl String?
 
-  timelineEvents TimelineEvent[]
-
-  @@unique([applicationId, documentId, purpose])
-  @@index([applicationId, purpose])
-  @@index([documentId])
-}
-
-model TimelineEventDocument {
-  id         String @id @default(uuid())
-  eventId    String
-  documentId String
+  notesMarkdown String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  event    TimelineEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  document DocumentAsset @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
 
-  @@unique([eventId, documentId])
-  @@index([documentId])
-}
+  contacts ScheduledEventContact[]
 
-// -----------------------------------------------------------------------------
-// CV profiles
-// -----------------------------------------------------------------------------
-
-model CVProfile {
-  id      String @id @default(uuid())
-  ownerId String
-
-  name             String
-  roleFamilyId     String?
-  versionLabel     String?
-  createdOn        DateTime
-  lastModifiedOn   DateTime
-  notes            String?
-  skillsEmphasized String?
-
-  documentId String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  owner      OwnerAccount   @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  roleFamily RoleFamily?    @relation(fields: [roleFamilyId], references: [id], onDelete: SetNull)
-  document   DocumentAsset? @relation(fields: [documentId], references: [id], onDelete: SetNull)
-
-  @@index([ownerId])
-  @@index([roleFamilyId])
-}
-
-// -----------------------------------------------------------------------------
-// Cover letters
-// -----------------------------------------------------------------------------
-
-model CoverLetter {
-  id      String @id @default(uuid())
-  ownerId String
-
-  name         String
-  variantType  CoverLetterVariantType
-  versionLabel String?
-
-  companyName   String?
-  positionTitle String?
-
-  markdownText String?
-  notes        String?
-
-  createdOn      DateTime
-  lastModifiedOn DateTime
-
-  documentId String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  owner    OwnerAccount   @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  document DocumentAsset? @relation(fields: [documentId], references: [id], onDelete: SetNull)
-
-  @@index([ownerId])
-  @@index([ownerId, variantType])
-}
-
-// -----------------------------------------------------------------------------
-// Professional evidence
-// -----------------------------------------------------------------------------
-
-model EvidenceItem {
-  id      String @id @default(uuid())
-  ownerId String
-
-  title              String
-  description        String?
-  url                String?
-  category           EvidenceCategory?
-  technologies       String?
-  skillsDemonstrated String?
-  businessImpact     String?
-  relevantRoleTypes  String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  owner        OwnerAccount          @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  applications ApplicationEvidence[]
-
-  @@index([ownerId])
-}
-
-model ApplicationEvidence {
-  id            String @id @default(uuid())
-  applicationId String
-  evidenceId    String
-
-  relevanceNote String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  application Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  evidence    EvidenceItem @relation(fields: [evidenceId], references: [id], onDelete: Restrict)
-
-  @@unique([applicationId, evidenceId])
-  @@index([evidenceId])
+  @@index([opportunityId, scheduledAt])
+  @@index([scheduledAt])
 }
 
 // -----------------------------------------------------------------------------
@@ -575,31 +500,43 @@ model Contact {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  owner                 OwnerAccount           @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  applications          ApplicationContact[]
-  timelineEvents        TimelineEvent[]
-  communications        Communication[]
-  interviewParticipants InterviewParticipant[]
+  owner           OwnerAccount            @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  opportunities   OpportunityContact[]
+  communications  Communication[]
+  scheduledEvents ScheduledEventContact[]
 
   @@index([ownerId])
   @@index([ownerId, email])
 }
 
-model ApplicationContact {
+model OpportunityContact {
   id            String @id @default(uuid())
-  applicationId String
+  opportunityId String
   contactId     String
 
   contextualRole String?
   notes          String?
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
-  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   contact     Contact     @relation(fields: [contactId], references: [id], onDelete: Restrict)
 
-  @@unique([applicationId, contactId])
+  @@unique([opportunityId, contactId])
+  @@index([contactId])
+}
+
+model ScheduledEventContact {
+  id               String @id @default(uuid())
+  scheduledEventId String
+  contactId        String
+
+  createdAt DateTime @default(now())
+
+  scheduledEvent ScheduledEvent @relation(fields: [scheduledEventId], references: [id], onDelete: Cascade)
+  contact        Contact        @relation(fields: [contactId], references: [id], onDelete: Restrict)
+
+  @@unique([scheduledEventId, contactId])
   @@index([contactId])
 }
 
@@ -609,7 +546,7 @@ model ApplicationContact {
 
 model Communication {
   id            String @id @default(uuid())
-  applicationId String
+  opportunityId String
 
   occurredAt DateTime
   direction  CommunicationDirection
@@ -624,134 +561,33 @@ model Communication {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   contact     Contact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
-  timelineEvents TimelineEvent[]
-  documents      CommunicationDocument[]
+  artefacts CommunicationArtefact[]
 
-  @@index([applicationId, occurredAt])
+  @@index([opportunityId, occurredAt])
   @@index([contactId])
 }
 
-model CommunicationDocument {
+model CommunicationArtefact {
   id              String @id @default(uuid())
   communicationId String
-  documentId      String
+  artefactId      String
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   communication Communication @relation(fields: [communicationId], references: [id], onDelete: Cascade)
-  document      DocumentAsset @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  artefact      Artefact      @relation(fields: [artefactId], references: [id], onDelete: Restrict)
 
-  @@unique([communicationId, documentId])
-  @@index([documentId])
+  @@unique([communicationId, artefactId])
+  @@index([artefactId])
 }
 
 // -----------------------------------------------------------------------------
-// Interviews
+// Scheduled event ↔ contact association
 // -----------------------------------------------------------------------------
 
-model Interview {
-  id            String @id @default(uuid())
-  applicationId String
-
-  type InterviewType
-
-  scheduledDate DateTime?
-  startTime     DateTime?
-  endTime       DateTime?
-  timeZone      String?
-
-  platform   String?
-  meetingUrl String?
-
-  preparationStatus String?
-  notesMarkdown     String?
-  outcome           String?
-  followUpActions   String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  application  Application            @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  participants InterviewParticipant[]
-
-  @@index([applicationId, scheduledDate])
-  @@index([startTime])
-}
-
-model InterviewParticipant {
-  id          String @id @default(uuid())
-  interviewId String
-  contactId   String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  interview Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
-  contact   Contact   @relation(fields: [contactId], references: [id], onDelete: Restrict)
-
-  @@unique([interviewId, contactId])
-  @@index([contactId])
-}
-
 // -----------------------------------------------------------------------------
-// Preparation
+// Submission Artefact reverse relations
 // -----------------------------------------------------------------------------
-
-model PreparationTask {
-  id            String @id @default(uuid())
-  applicationId String
-
-  title               String
-  descriptionMarkdown String?
-  status              PreparationTaskStatus   @default(TODO)
-  priority            PreparationTaskPriority @default(NORMAL)
-  dueDate             DateTime?
-  completedDate       DateTime?
-
-  version Int @default(1)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-
-  @@index([applicationId, status])
-  @@index([applicationId, dueDate])
-}
-
-model PreparationNote {
-  id            String @id @default(uuid())
-  applicationId String
-
-  title        String
-  bodyMarkdown String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-
-  @@index([applicationId])
-}
-
-model RelevantLink {
-  id            String @id @default(uuid())
-  applicationId String
-
-  title       String
-  url         String
-  category    LinkCategory?
-  description String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-
-  @@index([applicationId])
-  @@index([applicationId, category])
-}

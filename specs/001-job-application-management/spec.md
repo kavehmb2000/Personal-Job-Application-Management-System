@@ -1,182 +1,835 @@
-# Feature Specification: Personal Job Application Management
+# Feature Specification: Personal Job Opportunity Management
 
 **Feature Branch**: `001-job-application-management`
+**Status**: Draft — simplified MVP
+**Created**: 2026-08-17
 
-**Created**: 2026-08-13
+## 1. Purpose
 
-**Status**: Draft
+The Personal Job Opportunity Management System is a single-user, multi-device application for managing a personal job search.
 
-**Input**: User description: "Build a single-user, multi-device personal job application management system that preserves application context, submitted materials, communications, preparation, and history."
+Its purpose is to reduce cognitive overhead by preserving the context surrounding each job opportunity:
 
-## Clarifications
+* what the opportunity is;
+* why it is interesting;
+* how well it fits;
+* what research was performed;
+* which CV and other artefacts are relevant;
+* what has been submitted;
+* what has happened;
+* what needs attention;
+* what happens next;
+* and what was learned from the process.
 
-### Session 2026-08-13
+The system is intentionally not a generic ATS, CRM, project-management system, or workflow engine.
 
-- Q: How should the user remove an application or reusable asset from normal use while preserving recovery and data ownership? → A: Archive by default; allow confirmed permanent deletion.
-- Q: If the same record is edited from two personal devices, how should the system handle a conflicting save? → A: Detect conflict; let user review and choose.
-- Q: Can one job opportunity have more than one submission record, such as a reapplication or a later requested resubmission? → A: Create a separate opportunity for every resubmission.
-
-## User Scenarios & Testing *(mandatory)*
-
-### User Story 1 - Capture and progress an opportunity (Priority: P1)
-
-The user records a newly discovered job opportunity, adds its essential details and relevant materials, prepares an application, records the submission, and moves it through the job-search lifecycle without losing the materials or history associated with it.
-
-**Why this priority**: Capturing opportunities and reliably tracking their current state and submitted materials is the system's core value.
-
-**Independent Test**: Create an opportunity, assign a reusable CV and cover letter, record a submission, move it through statuses, and verify the workspace and chronological history retain the complete record.
-
-**Acceptance Scenarios**:
-
-1. **Given** a discovered job, **When** the user records its company, position, location, source, discovery date, status, and job link, **Then** it appears in the corresponding Kanban column and has an Application Workspace.
-2. **Given** a prepared opportunity, **When** the user records a submission with a CV and optional cover letter version, **Then** the submission date, method, notes, and exact submitted asset versions are retained in its history.
-3. **Given** an application on the Kanban, **When** the user moves it to another lifecycle status, **Then** its current status changes and a dated status-change event is added to its timeline.
+The MVP follows an **Opportunity-Centric, Event-Oriented** domain model.
 
 ---
 
-### User Story 2 - Restore full application context (Priority: P1)
+## 2. Core Concepts
 
-The user opens an application and can understand what it is, what has happened, what is upcoming, which materials and evidence matter, and what preparation remains without navigating through disconnected records.
+### 2.1 Opportunity
 
-**Why this priority**: Restoring context quickly is the primary differentiator of this personal system and reduces job-search cognitive overhead.
+An **Opportunity** represents one job opportunity being considered or pursued.
 
-**Independent Test**: Open an application containing a submission, communication, interview, preparation task, note, link, contact, document, and evidence item; verify all can be viewed and managed from its workspace.
+An Opportunity exists before an application is submitted.
 
-**Acceptance Scenarios**:
+A new application or resubmission for the same position is represented by a separate Opportunity.
 
-1. **Given** an application with associated records, **When** the user opens its workspace, **Then** job information, current status, next event, timeline, documents, interviews, preparation, notes, links, evidence, contacts, and communications are available with minimal navigation.
-2. **Given** an upcoming interview and unfinished preparation tasks, **When** the user views the workspace, **Then** the event is shown separately from the actions the user still needs to complete.
-3. **Given** historical activity entered out of order, **When** the user views the timeline, **Then** events appear chronologically with their dates, types, descriptions, and associated context.
+The Opportunity is the primary aggregate root and the central unit of user interaction.
+
+### 2.2 Artefact
+
+An **Artefact** is an immutable piece of professional or opportunity-related information that can be associated with an Opportunity.
+
+Examples include:
+
+* CV;
+* cover letter;
+* job description;
+* company research;
+* presentation;
+* portfolio item;
+* university diploma;
+* language certificate;
+* requested additional document;
+* interview preparation material;
+* assignment;
+* voice recording;
+* short video;
+* other externally stored material.
+
+For the MVP, an Artefact may simply contain a textual/Markdown representation or a link to a file stored in Google Drive.
+
+An Artefact is immutable. If its content changes, a new Artefact is created.
+
+### 2.3 Note
+
+An Opportunity has zero or more independent Notes.
+
+A Note is free-form context belonging to the Opportunity. It is not a lifecycle event.
+
+Notes may contain observations, thoughts, reminders, lessons learned, or other information that does not justify a distinct event.
+
+### 2.4 Event
+
+An Event records a significant occurrence involving an Opportunity.
+
+Events preserve historical context independently of the Opportunity's current state.
+
+Events may be:
+
+* lifecycle events;
+* communications;
+* interviews;
+* assignments;
+* document requests;
+* document submissions;
+* invitations;
+* other significant interactions.
+
+Not every piece of information must become an Event. In particular, ordinary Notes are not Events.
+
+### 2.5 Current State
+
+The Opportunity's current state answers:
+
+> Where is this opportunity now?
+
+The Event history answers:
+
+> What happened?
+
+Changing the current state MUST NOT erase historical events.
 
 ---
 
-### User Story 3 - Reuse and preserve professional assets (Priority: P1)
+# 3. Lifecycle
 
-The user maintains reusable CVs, cover letters, documents, and portfolio evidence, connects them to multiple applications, and can always determine exactly what was submitted for a particular application.
+The MVP uses a deliberately small finite state machine.
 
-**Why this priority**: The user manages several professional profiles and specialized variants; avoiding duplicate data while protecting submission history is essential.
+## 3.1 States
 
-**Independent Test**: Create reusable asset versions, link each to several applications, update the library with a later version, and verify earlier submissions still identify their original versions.
+The default states are:
 
-**Acceptance Scenarios**:
+1. **Discovered**
+2. **Submitted**
+3. **In Progress**
+4. **Offer**
+5. **Closed**
 
-1. **Given** a reusable CV or cover-letter version, **When** the user associates it with multiple applications, **Then** each association refers to the same identifiable version without requiring duplicate library records.
-2. **Given** a previously submitted asset version, **When** the user later adds or changes a newer library version, **Then** the earlier submission remains associated with the version originally used.
-3. **Given** a reusable evidence item, **When** the user links it to relevant applications, **Then** it can be viewed in each application workspace while being maintained once in the evidence library.
+`Closed` represents opportunities that will no longer receive active attention.
+
+Closure may occur because of:
+
+* cancellation;
+* rejection;
+* no response;
+* poor fit;
+* dead opportunity;
+* user decision not to continue;
+* other terminal circumstances.
+
+The specific reason is recorded as contextual information/event data rather than requiring a separate lifecycle state.
+
+### Offer
+
+`Offer` is intentionally not immediately treated as a terminal state.
+
+An offer may subsequently be:
+
+* accepted;
+* rejected by the user;
+* withdrawn;
+* otherwise concluded.
+
+For the MVP, an accepted offer remains in the **Offer** column and receives a clear visual distinction in the UI.
 
 ---
 
-### User Story 4 - Stay oriented across devices (Priority: P2)
+## 3.2 Valid State Transitions
 
-The user uses a desktop browser or mobile device to see active work, upcoming interviews, outstanding actions, and the most relevant application details, and can quickly capture a new opportunity or update progress.
+The lifecycle is:
 
-**Why this priority**: Multi-device and mobile access allow the user to manage the search without carrying a primary work computer.
+```text
+Discovered
+   ├──→ Submitted
+   └──→ Closed
 
-**Independent Test**: On desktop and mobile layouts, view the Kanban, open application details and documents, complete a preparation task, add a note or event, change status, and add an opportunity; confirm recently opened critical information remains readable during a temporary connection loss where it was previously available.
+Submitted
+   ├──→ In Progress
+   └──→ Closed
 
-**Acceptance Scenarios**:
+In Progress
+   ├──→ In Progress
+   ├──→ Offer
+   └──→ Closed
 
-1. **Given** active applications, **When** the user opens the home page, **Then** they see a concise Kanban whose cards primarily show position, company, country/location, and next event.
-2. **Given** the user is on a mobile device, **When** they need to update an application, **Then** they can perform the supported quick actions with low interaction cost.
-3. **Given** the user previously viewed critical application information or frequently used documents, **When** connectivity is temporarily unavailable, **Then** those previously accessed items remain readable where practical and the system clearly indicates that fresh data may be unavailable.
+Offer
+   ├──→ Offer
+   └──→ Closed
+```
 
-### Edge Cases
+`In Progress → In Progress` is not normally a meaningful state transition and does not create a lifecycle event.
 
-- A job is discovered but has no application date, contact, salary, CV, or cover letter; it remains a valid opportunity in the Discovered state.
-- An application has no next event or no next action; the workspace and Kanban show an unambiguous empty state rather than misleading information.
-- A reusable asset is unavailable at its external location after submission; the application still retains its version identity and submission metadata.
-- A status is changed by dragging a Kanban card but the update cannot be saved; the user is informed and the displayed state does not falsely imply success.
-- A user requests permanent deletion of an application or reusable asset; the system requires explicit confirmation and explains any historical records or external documents affected before deleting it.
-- An interview crosses time zones or has only a start time; its displayed schedule remains unambiguous and supports incomplete optional details.
-- A communication has no known recipient, body, attachment, or linked contact; the user can retain the known information without inventing missing details.
-- An application is marked Closed / No Response after a long delay; its prior activities remain visible and it can be found by search and filters.
-- The user reapplies or resubmits for the same job; they create a separate opportunity record so its lifecycle, submitted assets, and history are independently traceable.
-- Export is requested while some externally stored documents cannot be retrieved; the export identifies those items and preserves their links and metadata.
-- The same record is changed from two devices before either update is synchronized; the system detects the conflict, retains both versions for review, and does not silently overwrite either change.
+The important principle is that **almost all non-state-changing activity occurs while the Opportunity is In Progress**.
 
-## Requirements *(mandatory)*
+The system MUST prevent invalid lifecycle transitions.
 
-### Functional Requirements
+---
 
-- **FR-001**: The system MUST support one personal user and access to their information from multiple personal devices, without multi-tenancy, collaboration, organizational administration, or complex roles.
-- **FR-002**: The system MUST protect the user's job-search information and documents, use least-privilege access for connected external services, and authenticate the user through their Google account for the MVP.
-- **FR-003**: The system MUST allow the user to create, view, edit, search, filter, archive, and restore job opportunities before or after an application is submitted; permanent deletion MUST require explicit confirmation.
-- **FR-004**: Each opportunity MUST support company, position title, job URL, company URL, location, country, workplace arrangement, employment type, optional salary, optional visa sponsorship, optional relocation information, source, discovery date, application date, current status, priority, fit score, target role family, assigned CV, cover letter, recruiter/contact, and free-form notes.
-- **FR-005**: The system MUST provide the default lifecycle statuses Discovered, Preparing, Ready to Apply, Applied, Recruiter Contact, Screening, Interview, Technical Challenge, Final Interview, Offer, Rejected, Withdrawn, and Closed / No Response.
-- **FR-006**: The user MUST be able to configure the labels and order of lifecycle statuses without removing the ability to identify applications already assigned to a status.
-- **FR-007**: The home page MUST provide an Application Kanban organized by current status, and users MUST be able to move applications between statuses by dragging or an equivalent accessible interaction.
-- **FR-008**: A Kanban card MUST primarily show position, company, country/location, and next event; it MUST NOT prominently repeat status or display role family, fit score, priority, days in status, application date, or detailed next actions.
-- **FR-009**: Selecting a Kanban card MUST open its Application Workspace.
-- **FR-010**: The Application Workspace MUST bring together job information, current status, next event, chronological timeline, documents, interviews, preparation, notes, relevant links, evidence/portfolio, contacts, and communications with minimal navigation.
-- **FR-011**: An Application represents one pursued job opportunity and MUST have at most one formal Submission. That Submission records the original act of applying: submission date/time, immutable CV version used, optional immutable cover-letter version used, submission method, and submission notes. A reapplication, later attempt at the same role, or resubmission after closure/rejection/no response MUST be a new Application, not a second Submission.
-- **FR-012**: The system MUST preserve the exact version identity of every reusable asset associated with a submission even when later asset versions are added or changed.
-- **FR-013**: The system MUST provide reusable CV records with name, role family, version, creation date, last-modified date, file reference, notes, and emphasized skills; it MUST support the stated initial role families and allow the user to add others.
-- **FR-014**: The system MUST provide reusable cover-letter records with generic, company-specific, or position-specific variant type; version; optional company and position; file and/or text; notes; and creation/update information.
-- **FR-015**: The system MUST support application-associated documents with name, type, version, file or external link, optional description, optional status, and application association. Later employer-requested materials (for example updated CVs, additional information, coding challenges, take-home submissions, presentations, and interview materials) are recorded as application documents and linked through the appropriate timeline, communication, interview, or preparation records; they are not additional Submissions.
-- **FR-016**: The system MUST support reusable documents and assets without unnecessary duplication, including CVs, cover letters, portfolio items, presentations, coding challenges, job descriptions, company information, interview notes, and preparation notes.
-- **FR-017**: The system MUST store documents through a provider-independent document-storage capability and initially support the user's Google Drive documents without making Google Drive concepts part of the core job-search records.
-- **FR-018**: Each application MUST have a chronological timeline of important user-recorded and system-recorded events.
-- **FR-019**: Timeline events MUST support date/time, event type, title, description, optional related contact, attached documents, optional communication content, and optional external link.
-- **FR-020**: The system MUST automatically add timeline events for status changes and submissions, and allow the user to add other important events such as discovery, invitations, challenges, interviews, rejections, offers, notes, and replies.
-- **FR-021**: The system MUST support manually entered communication records with date/time, incoming or outgoing direction, sender, recipient, subject, body and/or notes, attachments, optional contact, and related application.
-- **FR-022**: The MVP MUST NOT automatically synchronize Gmail or Outlook messages, extract statuses from email, or detect interviews from email.
-- **FR-023**: The system MUST support lightweight application contacts with the useful details needed for recruiters, hiring managers, interviewers, referrals, and HR contacts, without becoming a general-purpose sales CRM.
-- **FR-024**: The system MUST support interviews associated with applications, including type, date, start/end time, time zone, platform, meeting URL, interviewers, preparation status, notes, outcome, and follow-up actions.
-- **FR-025**: Upcoming interviews and other future events MUST be prominently visible in the relevant application workspace and dashboard.
-- **FR-026**: The system MUST distinguish a future event from a user action; actions and events MUST be independently recordable and viewable.
-- **FR-027**: The system MUST provide application preparation tasks with title, description, status, priority, due date, and completion date, and allow users to complete and update them.
-- **FR-028**: The system MUST provide free-form Markdown preparation notes and relevant links with title, URL, category, and description for each application.
-- **FR-029**: The system MUST provide reusable evidence/portfolio items with title, description, URL, category, technologies, skills demonstrated, business impact, and relevant role types.
-- **FR-030**: The user MUST be able to associate multiple reusable evidence/portfolio items with an application and maintain each item once for reuse across applications.
-- **FR-031**: The dashboard MUST provide a simple overview of active applications, applications this month, upcoming interviews, applications awaiting response, outstanding technical challenges, offers, rejections, applications by role family and country, conversion between major stages, average time between important stages, applications requiring action, and upcoming events.
-- **FR-032**: The system MUST provide full-text search across company, position, application notes, preparation notes, communication notes, document metadata, and evidence metadata.
-- **FR-033**: The system MUST support filtering applications by company, position, role family, country, status, CV used, application date, priority, fit score, interview state, challenge state, sponsorship, and source.
-- **FR-034**: Desktop and mobile experiences MUST support viewing the Kanban, application details, CVs and documents, preparation, notes, timelines, and upcoming interviews.
-- **FR-035**: On mobile devices, the user MUST be able to add an opportunity, add a quick event, note, or task, complete a preparation task, change an application status, and view documents with low interaction cost.
-- **FR-036**: Previously viewed critical application information and bounded, user-recent document access SHOULD remain readable during temporary connectivity loss where practical. The MVP MUST not queue offline mutations, synchronize offline changes, or provide full offline document storage.
-- **FR-037**: The user MUST be able to create a portable backup export containing structured application and related data, JSON and/or CSV representations where appropriate, a manifest, document metadata, provider references, and every document binary retrievable from Google Drive under the granted authorization. For each binary that cannot be retrieved, the manifest MUST explain its unavailability while retaining associated metadata and reference; references alone are not a complete backup.
-- **FR-038**: The MVP MUST NOT include calendar synchronization, LinkedIn integration, automatic job scraping or discovery, AI agents, AI-generated CVs or cover letters, browser extensions, microservices, elaborate workflow engines, or separate search infrastructure.
-- **FR-039**: The data model MUST allow future optional assistance such as job-requirement extraction, CV and evidence recommendations, preparation suggestions, communication summaries, and interview analysis without making any such assistance authoritative or required for core workflows.
-- **FR-040**: The system MUST preserve existing historical information when records are edited, status changes occur, connected services fail, or a user closes an application; archiving MUST preserve the associated history until the user explicitly confirms permanent deletion.
-- **FR-042**: The MVP MUST implement one configured personal user only, while keeping domain-data ownership and authorization boundaries explicit and keeping external authentication identity separate from core job-search entities. This is a SaaS-compatible boundary, not multi-tenancy, organizations, RBAC, billing, user management, collaboration, or administration.
-- **FR-041**: When conflicting edits to the same record are received from different personal devices, the system MUST retain both versions for user review and require the user to choose the resulting value; it MUST NOT silently overwrite either edit.
+# 4. User Workflow
 
-### Key Entities *(include if feature involves data)*
+## 4.1 Discover
 
-- **Opportunity / Application**: A job opportunity and its current job-search state; may exist before submission and brings all related context together. A reapplication or resubmission is represented by a separate record.
-- **Submission**: The optional, single dated record of originally applying for an opportunity, including immutable identities of the submitted asset versions and submission details. Later employer-requested materials use the applicable lifecycle entities instead.
-- **Lifecycle Status**: A user-configurable workflow state used to organize current application progress on the Kanban.
-- **Timeline Event**: A dated historical record of a significant event or system action connected to an application.
-- **Document Asset**: A reusable or application-specific file or external reference, with type, version, metadata, and optional application association.
-- **CV**: A reusable, versioned professional resume tailored to one or more role families.
-- **Cover Letter**: A reusable, versioned generic, company-specific, or position-specific letter.
-- **Communication**: A manually recorded incoming or outgoing message associated with an application and optionally a contact.
-- **Contact**: A lightweight person record relevant to an application, such as a recruiter or interviewer.
-- **Interview**: A scheduled or completed application event with participants, schedule, preparation state, outcome, and follow-up actions.
-- **Preparation Task**: A user action needed to prepare for an application, with status, priority, and dates.
-- **Preparation Note / Relevant Link**: Application context entered as Markdown notes or categorized web links.
-- **Evidence / Portfolio Item**: A reusable project, presentation, article, publication, or other professional evidence that can be linked to several applications.
+The user searches external sources such as LinkedIn, Indeed, Glassdoor, Relocate.me, company websites, or other sources.
 
-## Success Criteria *(mandatory)*
+The user manually decides whether a job is interesting.
 
-### Measurable Outcomes
+The user creates an Opportunity and records:
 
-- **SC-001**: A user can record a newly discovered opportunity with its required core details and see it on the Kanban in under 2 minutes.
-- **SC-002**: A user can open an active application and identify its position, company, current status, next event, latest history, submitted materials, and unfinished preparation in under 30 seconds.
-- **SC-003**: A user can record a submission, including its exact CV and optional cover-letter version, in under 1 minute; a later review identifies the originally submitted versions in 100% of tested submissions.
-- **SC-004**: In usability testing of a representative large job search, the user can locate an application by free-text search or the specified filters in no more than 3 interactions after opening search or filters.
-- **SC-005**: A user can complete the common mobile tasks of viewing an application, completing a preparation task, changing status, or adding a quick note/event in no more than 4 interactions from the relevant primary view.
-- **SC-006**: The dashboard identifies every application with an upcoming event within the next 14 days and every open preparation task past its due date in the test data set.
-- **SC-007**: A complete export makes 100% of structured application records readable independently of the application, includes every retrievable authorized document binary, and identifies every referenced document and reason any binary could not be included.
-- **SC-008**: Previously accessed critical information remains readable in a simulated temporary connectivity loss for at least 90% of the representative items selected for offline availability.
+* company;
+* position;
+* location;
+* source;
+* source URL;
+* job description/content;
+* date added.
 
-## Assumptions
+The Opportunity enters `Discovered`.
 
-- The MVP serves one user only; access from multiple personal devices refers to the same user's authenticated account.
-- Google account sign-in and Google Drive are initial external dependencies; document storage remains conceptually provider-independent.
-- Manual entry is the accepted MVP workflow for communications, interviews, discovered opportunities, and status updates.
-- CV, cover-letter, and document versions are immutable once used in a recorded submission; corrections are made by adding a new version rather than altering the historical association.
-- Configurable statuses are limited to a simple personal workflow configuration and do not introduce workflow automation, approvals, or complex rules.
-- “Frequently used documents” and “critical application information” for temporary read-only access are determined by the user's recent access and saved application context; full offline editing and conflict synchronization are excluded.
-- Export is a portable backup: it includes structured records, manifest, metadata, provider references, and all binaries retrievable under granted authorization; unavailable binaries remain documented in the manifest with their references and reason.
-- Future AI features remain optional suggestions and never overwrite or silently alter user-entered records.
+No automated job scraping or discovery is required.
+
+---
+
+## 4.2 Evaluate and Prepare
+
+While the Opportunity is `Discovered`, the user may:
+
+* evaluate personal fit;
+* record a fit score;
+* identify relevant skills;
+* record why the opportunity is interesting;
+* research the company;
+* identify a suitable CV;
+* prepare a cover letter;
+* identify relevant professional evidence;
+* add Notes;
+* attach or create Artefacts;
+* record useful links;
+* optionally ask an AI system for advice outside the application's core workflow.
+
+The system MUST allow this information to exist without requiring the Opportunity to advance to another state.
+
+If the user decides not to continue, the Opportunity moves directly to `Closed`.
+
+---
+
+## 4.3 Submit
+
+When the user decides to pursue the opportunity, they follow the source URL and submit the application externally.
+
+The user records the successful submission.
+
+The Opportunity changes:
+
+```text
+Discovered → Submitted
+```
+
+The system records a lifecycle event containing the submission information.
+
+The submission may include:
+
+* submission date/time;
+* method;
+* brief process note;
+* submitted CV Artefact;
+* submitted cover-letter Artefact, if applicable;
+* relevant submitted Artefacts.
+
+The MVP does not attempt to automate submission.
+
+---
+
+## 4.4 Progress
+
+When the employer/recruiter responds positively or the process otherwise moves forward:
+
+```text
+Submitted → In Progress
+```
+
+An Opportunity may remain `In Progress` for an extended period.
+
+During this period the user may record any significant activity, including:
+
+* recruiter contact;
+* interview invitation;
+* interview;
+* technical assignment;
+* coding challenge;
+* request for documents;
+* request for diploma;
+* request for university transcript;
+* request for language certificate;
+* request for additional information;
+* submission of additional materials;
+* follow-up;
+* preparation;
+* lessons learned.
+
+These activities do not require new lifecycle states.
+
+They are represented by Events and/or Artefacts attached to the Opportunity.
+
+---
+
+## 4.5 Offer
+
+When an offer is received:
+
+```text
+In Progress → Offer
+```
+
+An Offer event records the occurrence and relevant information.
+
+The Opportunity remains visible in the dedicated Offer column.
+
+If the user accepts the offer, the Opportunity remains in the Offer column for the MVP but receives a distinct visual indication.
+
+If the offer is rejected, withdrawn, or otherwise concluded without acceptance, the Opportunity may move to `Closed`.
+
+---
+
+## 4.6 Closure
+
+An Opportunity may move to `Closed` from:
+
+* `Discovered`;
+* `Submitted`;
+* `In Progress`;
+* `Offer`.
+
+The closure reason is recorded as contextual information and/or an Event.
+
+Examples:
+
+* not a good fit;
+* nationality restriction;
+* dead application link;
+* rejected;
+* no response;
+* user cancelled;
+* offer rejected;
+* opportunity disappeared.
+
+These reasons do not require separate lifecycle states in the MVP.
+
+---
+
+# 5. User Stories
+
+## US-001 — Capture an Opportunity
+
+**Priority: P1**
+
+Given a job discovered externally, the user can create an Opportunity quickly and preserve the essential information needed to reconsider it later.
+
+### Acceptance
+
+The user can record:
+
+* company;
+* position;
+* location;
+* country;
+* source;
+* source URL;
+* job description/content;
+* date added.
+
+The Opportunity appears in the `Discovered` Kanban column.
+
+---
+
+## US-002 — Evaluate an Opportunity
+
+**Priority: P1**
+
+The user can record fit assessment, research, Notes, relevant Artefacts, and preparation information without changing the lifecycle state.
+
+---
+
+## US-003 — Submit an Opportunity
+
+**Priority: P1**
+
+The user can record that an Opportunity was successfully submitted.
+
+The system changes the state to `Submitted` and records the submission as historical information.
+
+---
+
+## US-004 — Manage an Active Opportunity
+
+**Priority: P1**
+
+The user can manage all significant activity around an Opportunity while it is `In Progress`.
+
+The system must not require every possible activity to correspond to a dedicated domain entity.
+
+---
+
+## US-005 — Track an Offer
+
+**Priority: P1**
+
+The user can record an offer and see it separately from ordinary active Opportunities.
+
+An accepted offer remains in the Offer column but receives a distinct visual indication.
+
+---
+
+## US-006 — Close an Opportunity
+
+**Priority: P1**
+
+The user can close an Opportunity from any appropriate non-terminal stage.
+
+The system preserves its complete historical context.
+
+---
+
+## US-007 — Reuse Artefacts
+
+**Priority: P1**
+
+The user can create an immutable Artefact and associate it with multiple Opportunities.
+
+Changing an Artefact means creating another Artefact.
+
+Historical associations remain unchanged.
+
+---
+
+## US-008 — Restore Context
+
+**Priority: P1**
+
+Opening an Opportunity provides enough information to understand:
+
+* the job;
+* current state;
+* relevant Artefacts;
+* Notes;
+* latest activity;
+* upcoming events;
+* outstanding actions;
+* preparation;
+* history.
+
+---
+
+# 6. Opportunity Information
+
+An Opportunity SHOULD contain only information that is genuinely useful to the user's workflow.
+
+### Core job information
+
+* company name;
+* position title;
+* location;
+* country;
+* role family;
+* source;
+* source URL;
+* date added;
+* job description;
+* fit score;
+* notes.
+
+The following are deliberately excluded from the MVP as structured Opportunity fields:
+
+* company URL;
+* workplace mode;
+* employment type;
+* salary;
+* visa sponsorship;
+* relocation information.
+
+Such information can remain in the job description or Notes when useful.
+
+---
+
+# 7. Notes
+
+Each Opportunity MAY contain zero or more Notes.
+
+Notes are independent records.
+
+A Note contains:
+
+* immutable `id`;
+* `opportunityId`;
+* Markdown content;
+* creation timestamp;
+* modification timestamp.
+
+Notes are not Events.
+
+Notes may contain:
+
+* observations;
+* research conclusions;
+* personal assessment;
+* lessons learned;
+* reminders;
+* miscellaneous context.
+
+The MVP does not require note categories or elaborate note management.
+
+---
+
+# 8. Artefacts
+
+Artefacts are immutable.
+
+An Artefact may represent:
+
+* text;
+* Markdown;
+* document;
+* presentation;
+* image;
+* audio;
+* video;
+* external resource.
+
+For the MVP, the application does not need to process arbitrary file formats.
+
+An Artefact may simply reference a file in Google Drive.
+
+The MVP should support:
+
+* title/name;
+* type;
+* description;
+* textual/Markdown content where applicable;
+* external file/link reference;
+* creation timestamp;
+* immutable `id`.
+
+If an Artefact changes, a new Artefact is created.
+
+No Artefact versioning is required.
+
+---
+
+# 9. Events
+
+Events provide the historical record around an Opportunity.
+
+A lifecycle transition creates an appropriate lifecycle Event.
+
+Examples include:
+
+* Opportunity created;
+* Opportunity submitted;
+* Opportunity moved to In Progress;
+* offer received;
+* Opportunity closed;
+* interview scheduled;
+* interview completed;
+* assignment received;
+* assignment submitted;
+* additional document requested;
+* additional document submitted;
+* recruiter contacted user;
+* user sent follow-up.
+
+The event model MUST remain extensible.
+
+The system MUST NOT require every possible type of employer interaction to have a dedicated schema in the MVP.
+
+A significant event can carry:
+
+* occurrence date/time;
+* type;
+* title;
+* description;
+* optional Artefact associations;
+* optional external link;
+* optional contact information;
+* optional structured contextual data where justified.
+
+---
+
+# 10. Kanban
+
+The Kanban is an operational overview.
+
+Default columns:
+
+* Discovered
+* Submitted
+* In Progress
+* Offer
+* Closed
+
+Closed opportunities do not require separate visual columns for:
+
+* Rejected;
+* Cancelled;
+* No Response;
+* other closure reasons.
+
+Those distinctions remain available in the Opportunity history/context.
+
+The card SHOULD primarily show:
+
+* position;
+* company;
+* country/location;
+* next relevant event/action.
+
+The card SHOULD remain visually compact.
+
+Accepted Offers remain in the Offer column and receive a distinct visual indicator.
+
+The exact visual treatment is a UI decision and may be deferred.
+
+---
+
+# 11. Opportunity Workspace
+
+The Opportunity Workspace is the primary interaction surface.
+
+It SHOULD provide:
+
+* job information;
+* current state;
+* fit assessment;
+* source;
+* relevant Artefacts;
+* Notes;
+* recent and upcoming Events;
+* outstanding preparation/actions;
+* contacts;
+* links;
+* submission information;
+* historical timeline.
+
+The Workspace should minimize navigation between disconnected records.
+
+---
+
+# 12. Dashboard
+
+The MVP dashboard is intentionally action-oriented.
+
+It should behave more like a combination of:
+
+> calendar + briefcase
+
+than an analytics system.
+
+It should focus on:
+
+* newly discovered Opportunities;
+* Opportunities awaiting a decision;
+* Submitted Opportunities awaiting response;
+* In Progress Opportunities;
+* upcoming events;
+* outstanding preparation/actions;
+* overdue actions;
+* Offers.
+
+Closed Opportunities are not a primary dashboard concern.
+
+Historical closed opportunities remain searchable and accessible for lessons learned.
+
+Advanced analytics such as:
+
+* conversion rates;
+* average stage duration;
+* country statistics;
+* role-family statistics;
+* historical rejection analysis;
+
+are deferred unless real-world use demonstrates value.
+
+---
+
+# 13. Search and Filtering
+
+The MVP should provide core search and filtering.
+
+Core filters include:
+
+* company;
+* position;
+* role family;
+* country;
+* lifecycle state;
+* source.
+
+Additional filters may be added when demonstrated useful.
+
+The system should avoid building an elaborate search subsystem.
+
+---
+
+# 14. Multi-Device Access
+
+The system MUST support desktop and mobile browser use.
+
+The user should be able to:
+
+* create an Opportunity;
+* change state;
+* add a Note;
+* add an Event;
+* add/associate an Artefact;
+* complete a preparation action;
+* inspect an Opportunity;
+* view upcoming events.
+
+Mobile interaction should minimize unnecessary navigation.
+
+---
+
+# 15. Offline Behavior
+
+The MVP provides bounded read-only offline support.
+
+Previously accessed critical Opportunity information may remain readable during temporary connectivity loss.
+
+The MVP does not provide:
+
+* offline mutation queues;
+* offline synchronization;
+* full offline document storage;
+* automatic conflict resolution.
+
+---
+
+# 16. External Services
+
+The MVP may use Google authentication and Google Drive.
+
+Google-specific concepts MUST remain outside the core Opportunity domain.
+
+The core model deals with:
+
+* Artefacts;
+* external references;
+* storage capabilities.
+
+It does not expose Google Drive IDs or concepts as domain requirements.
+
+---
+
+# 17. Explicit MVP Exclusions
+
+The MVP MUST NOT include:
+
+* automatic job scraping;
+* LinkedIn integration;
+* Gmail/Outlook synchronization;
+* calendar synchronization;
+* browser extensions;
+* AI agents;
+* automatic CV generation;
+* automatic cover-letter generation;
+* source-code storage;
+* complex workflow engines;
+* microservices;
+* separate search infrastructure;
+* generic CRM functionality;
+* multi-tenancy;
+* collaboration;
+* RBAC;
+* elaborate analytics.
+
+Source code can remain in GitHub or another external system and be represented by a link Artefact where relevant.
+
+---
+
+# 18. Privacy and Ownership
+
+The system contains sensitive professional information.
+
+It MUST:
+
+* authenticate the user;
+* enforce ownership boundaries;
+* use least-privilege external access;
+* preserve data during failures;
+* support export/backup;
+* avoid silently destroying historical information.
+
+Archiving is preferred over deletion.
+
+Permanent deletion requires explicit confirmation.
+
+---
+
+# 19. Concurrency
+
+Editable records use optimistic concurrency.
+
+If the same record is changed from two devices:
+
+1. the system detects the version conflict;
+2. neither change is silently discarded;
+3. the user can review the conflicting values;
+4. the user explicitly chooses the resulting value.
+
+---
+
+# 20. Success Criteria
+
+### SC-001
+
+A newly discovered Opportunity can be captured in under two minutes.
+
+### SC-002
+
+The user can understand an active Opportunity's current state, latest activity, next action/event, and relevant Artefacts in under 30 seconds.
+
+### SC-003
+
+A successful submission retains the identity of the Artefacts used for submission.
+
+### SC-004
+
+The user can locate an Opportunity using core search/filtering within a few interactions.
+
+### SC-005
+
+Common mobile operations require no more than a few interactions from the relevant primary view.
+
+### SC-006
+
+Upcoming Events and outstanding actions are visible without inspecting closed Opportunities.
+
+### SC-007
+
+Export preserves structured Opportunity history and Artefact references and retrieves available external files where authorization permits.
+
+### SC-008
+
+Previously accessed critical information remains readable during temporary connectivity loss where practical.
+
+# 21. Guiding Principle
+
+The system should implement:
+
+**Opportunity-centric, event-oriented context management with the smallest domain model that reliably supports the real job-search workflow.**
+
+The product exists to simplify the job search.
+
+It must not turn the job search into a complicated software system.

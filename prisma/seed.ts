@@ -1,5 +1,5 @@
 ﻿import dotenv from "dotenv";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, LifecycleStateKey } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 dotenv.config({ path: ".env.local" });
@@ -10,21 +10,74 @@ const adapter = new PrismaPg({
 
 const prisma = new PrismaClient({ adapter });
 
-const lifecycleStatuses = [
-  { name: "Discovered", sortOrder: 10, isTerminal: false },
-  { name: "Evaluating", sortOrder: 20, isTerminal: false },
-  { name: "Preparing", sortOrder: 30, isTerminal: false },
-  { name: "Ready to Apply", sortOrder: 40, isTerminal: false },
-  { name: "Applied", sortOrder: 50, isTerminal: false },
-  { name: "Recruiter Contact", sortOrder: 60, isTerminal: false },
-  { name: "Screening", sortOrder: 70, isTerminal: false },
-  { name: "Interview", sortOrder: 80, isTerminal: false },
-  { name: "Technical Challenge", sortOrder: 90, isTerminal: false },
-  { name: "Final Interview", sortOrder: 100, isTerminal: false },
-  { name: "Offer", sortOrder: 110, isTerminal: true },
-  { name: "Rejected", sortOrder: 120, isTerminal: true },
-  { name: "Withdrawn", sortOrder: 130, isTerminal: true },
-  { name: "Closed / No Response", sortOrder: 140, isTerminal: true },
+const lifecycleStatuses: Array<{
+  key: LifecycleStateKey;
+  label: string;
+  sortOrder: number;
+  isTerminal: boolean;
+}> = [
+  {
+    key: "DISCOVERED",
+    label: "Discovered",
+    sortOrder: 10,
+    isTerminal: false,
+  },
+  {
+    key: "SUBMITTED",
+    label: "Submitted",
+    sortOrder: 20,
+    isTerminal: false,
+  },
+  {
+    key: "IN_PROGRESS",
+    label: "In Progress",
+    sortOrder: 30,
+    isTerminal: false,
+  },
+  {
+    key: "OFFER",
+    label: "Offer",
+    sortOrder: 40,
+    isTerminal: false,
+  },
+  {
+    key: "CLOSED",
+    label: "Closed",
+    sortOrder: 50,
+    isTerminal: true,
+  },
+  {
+    key: "CANCELLED",
+    label: "Cancelled",
+    sortOrder: 60,
+    isTerminal: true,
+  },
+  {
+    key: "REJECTED",
+    label: "Rejected",
+    sortOrder: 70,
+    isTerminal: true,
+  },
+];
+
+const lifecycleTransitions: Array<[LifecycleStateKey, LifecycleStateKey]> = [
+  ["DISCOVERED", "SUBMITTED"],
+  ["DISCOVERED", "CLOSED"],
+  ["DISCOVERED", "CANCELLED"],
+
+  ["SUBMITTED", "IN_PROGRESS"],
+  ["SUBMITTED", "CLOSED"],
+  ["SUBMITTED", "CANCELLED"],
+  ["SUBMITTED", "REJECTED"],
+
+  ["IN_PROGRESS", "OFFER"],
+  ["IN_PROGRESS", "CLOSED"],
+  ["IN_PROGRESS", "CANCELLED"],
+  ["IN_PROGRESS", "REJECTED"],
+
+  ["OFFER", "CLOSED"],
+  ["OFFER", "CANCELLED"],
+  ["OFFER", "REJECTED"],
 ];
 
 const roleFamilies = [
@@ -55,22 +108,56 @@ async function main() {
     },
   });
 
+  const statusIds = new Map<LifecycleStateKey, string>();
+
   for (const status of lifecycleStatuses) {
-    await prisma.lifecycleStatus.upsert({
+    const lifecycleStatus = await prisma.lifecycleStatus.upsert({
       where: {
-        ownerId_name: {
+        ownerId_key: {
           ownerId: owner.id,
-          name: status.name,
+          key: status.key,
         },
       },
       update: {
+        label: status.label,
         sortOrder: status.sortOrder,
         isTerminal: status.isTerminal,
         isActive: true,
       },
       create: {
         ownerId: owner.id,
-        ...status,
+        key: status.key,
+        label: status.label,
+        sortOrder: status.sortOrder,
+        isTerminal: status.isTerminal,
+        isActive: true,
+      },
+    });
+
+    statusIds.set(status.key, lifecycleStatus.id);
+  }
+
+  for (const [fromKey, toKey] of lifecycleTransitions) {
+    const fromStatusId = statusIds.get(fromKey);
+    const toStatusId = statusIds.get(toKey);
+
+    if (!fromStatusId || !toStatusId) {
+      throw new Error(
+        `Missing lifecycle status for transition ${fromKey} -> ${toKey}`,
+      );
+    }
+
+    await prisma.lifecycleTransition.upsert({
+      where: {
+        fromStatusId_toStatusId: {
+          fromStatusId,
+          toStatusId,
+        },
+      },
+      update: {},
+      create: {
+        fromStatusId,
+        toStatusId,
       },
     });
   }
@@ -78,15 +165,26 @@ async function main() {
   for (const roleFamily of roleFamilies) {
     await prisma.roleFamily.upsert({
       where: {
-        name: roleFamily.name,
+        ownerId_name: {
+          ownerId: owner.id,
+          name: roleFamily.name,
+        },
       },
       update: {
         sortOrder: roleFamily.sortOrder,
         isActive: true,
       },
-      create: roleFamily,
+      create: {
+        ownerId: owner.id,
+        ...roleFamily,
+      },
     });
   }
+
+  console.log(`Seeded owner: ${owner.email}`);
+  console.log(`Seeded lifecycle states: ${lifecycleStatuses.length}`);
+  console.log(`Seeded lifecycle transitions: ${lifecycleTransitions.length}`);
+  console.log(`Seeded role families: ${roleFamilies.length}`);
 }
 
 main()
