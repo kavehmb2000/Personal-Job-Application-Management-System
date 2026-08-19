@@ -1,4 +1,4 @@
-codex# Constitution — Personal Job Application Management System
+# Constitution — Personal Job Application Management System
 
 ## Preamble
 

@@ -5,9 +5,6 @@ CREATE TYPE "AuditEventType" AS ENUM ('SIGN_IN', 'SIGN_IN_DENIED', 'EXPORT_REQUE
 CREATE TYPE "LifecycleStateKey" AS ENUM ('DISCOVERED', 'SUBMITTED', 'IN_PROGRESS', 'OFFER', 'CLOSED', 'CANCELLED', 'REJECTED');
 
 -- CreateEnum
-CREATE TYPE "ApplicationPriority" AS ENUM ('LOW', 'NORMAL', 'HIGH', 'URGENT');
-
--- CreateEnum
 CREATE TYPE "OpportunityEventType" AS ENUM ('OPPORTUNITY_CREATED', 'OPPORTUNITY_SUBMITTED', 'OPPORTUNITY_IN_PROGRESS', 'OFFER_RECEIVED', 'OPPORTUNITY_CLOSED', 'OPPORTUNITY_CANCELLED', 'OPPORTUNITY_REJECTED', 'INTERVIEW_SCHEDULED', 'INTERVIEW_COMPLETED', 'DOCUMENT_REQUESTED', 'TRANSCRIPT_REQUESTED', 'DIPLOMA_REQUESTED', 'CERTIFICATE_REQUESTED', 'LANGUAGE_PROOF_REQUESTED', 'CHALLENGE_RECEIVED', 'CHALLENGE_SUBMITTED', 'COMMUNICATION', 'CUSTOM');
 
 -- CreateEnum
@@ -110,11 +107,10 @@ CREATE TABLE "Opportunity" (
     "country" TEXT,
     "source" TEXT,
     "fitScore" INTEGER,
-    "priority" "ApplicationPriority" NOT NULL DEFAULT 'NORMAL',
     "discoveredAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "statusId" TEXT NOT NULL,
     "roleFamilyId" TEXT,
-    "nextActionTitle" TEXT,
+    "nextAction" TEXT,
     "nextActionDueAt" TIMESTAMP(3),
 
     CONSTRAINT "Opportunity_pkey" PRIMARY KEY ("id")
@@ -344,9 +340,6 @@ CREATE INDEX "Opportunity_ownerId_statusId_idx" ON "Opportunity"("ownerId", "sta
 
 -- CreateIndex
 CREATE INDEX "Opportunity_ownerId_discoveredAt_idx" ON "Opportunity"("ownerId", "discoveredAt");
-
--- CreateIndex
-CREATE INDEX "Opportunity_ownerId_priority_idx" ON "Opportunity"("ownerId", "priority");
 
 -- CreateIndex
 CREATE INDEX "Opportunity_ownerId_roleFamilyId_idx" ON "Opportunity"("ownerId", "roleFamilyId");

@@ -15,3 +15,20 @@ node_modules/
 # Playwright
 playwright-report/
 test-results/
+
+# Local AI tooling
+.grok/
+.opencode/
+
+# Generated Spec Kit integration/cache state
+.specify/integrations/.cache/
+
+# Local Spec Kit integration manifests
+.specify/integrations/grok.manifest.json
+.specify/integrations/opencode.manifest.json
+
+# Local Prisma migration backups
+prisma/migration-backup-*/
+
+#JetBrains IDE
+.idea/inspectionProfiles/

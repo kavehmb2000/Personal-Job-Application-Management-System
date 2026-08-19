@@ -8,41 +8,29 @@ export function ownerAccountWhere(
   };
 }
 
-export function applicationOwnerWhere(
+export function opportunityOwnerWhere(
   ownerId: string,
-): Prisma.ApplicationWhereInput {
+): Prisma.OpportunityWhereInput {
   return {
     ownerId,
   };
 }
 
-export function documentAssetOwnerWhere(
-  ownerId: string,
-): Prisma.DocumentAssetWhereInput {
+export function artefactOwnerWhere(ownerId: string): Prisma.ArtefactWhereInput {
   return {
     ownerId,
   };
 }
 
-export function cvProfileOwnerWhere(
-  ownerId: string,
-): Prisma.CVProfileWhereInput {
+export function contactOwnerWhere(ownerId: string): Prisma.ContactWhereInput {
   return {
     ownerId,
   };
 }
 
-export function coverLetterOwnerWhere(
+export function roleFamilyOwnerWhere(
   ownerId: string,
-): Prisma.CoverLetterWhereInput {
-  return {
-    ownerId,
-  };
-}
-
-export function evidenceItemOwnerWhere(
-  ownerId: string,
-): Prisma.EvidenceItemWhereInput {
+): Prisma.RoleFamilyWhereInput {
   return {
     ownerId,
   };

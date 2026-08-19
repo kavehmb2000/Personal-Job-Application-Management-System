@@ -1,13 +1,12 @@
 ﻿import { describe, expect, it } from "vitest";
 
 import {
-  applicationOwnerWhere,
-  coverLetterOwnerWhere,
-  cvProfileOwnerWhere,
-  documentAssetOwnerWhere,
-  evidenceItemOwnerWhere,
+  artefactOwnerWhere,
+  contactOwnerWhere,
   lifecycleStatusOwnerWhere,
+  opportunityOwnerWhere,
   ownerAccountWhere,
+  roleFamilyOwnerWhere,
 } from "@/lib/repositories/owner-scope";
 
 describe("owner-scope helpers", () => {
@@ -19,32 +18,26 @@ describe("owner-scope helpers", () => {
     });
   });
 
-  it("scopes applications by owner id", () => {
-    expect(applicationOwnerWhere(ownerId)).toEqual({
+  it("scopes opportunities by owner id", () => {
+    expect(opportunityOwnerWhere(ownerId)).toEqual({
       ownerId,
     });
   });
 
-  it("scopes document assets by owner id", () => {
-    expect(documentAssetOwnerWhere(ownerId)).toEqual({
+  it("scopes artefacts by owner id", () => {
+    expect(artefactOwnerWhere(ownerId)).toEqual({
       ownerId,
     });
   });
 
-  it("scopes CV profiles by owner id", () => {
-    expect(cvProfileOwnerWhere(ownerId)).toEqual({
+  it("scopes contacts by owner id", () => {
+    expect(contactOwnerWhere(ownerId)).toEqual({
       ownerId,
     });
   });
 
-  it("scopes cover letters by owner id", () => {
-    expect(coverLetterOwnerWhere(ownerId)).toEqual({
-      ownerId,
-    });
-  });
-
-  it("scopes evidence items by owner id", () => {
-    expect(evidenceItemOwnerWhere(ownerId)).toEqual({
+  it("scopes role families by owner id", () => {
+    expect(roleFamilyOwnerWhere(ownerId)).toEqual({
       ownerId,
     });
   });
@@ -56,8 +49,8 @@ describe("owner-scope helpers", () => {
   });
 
   it("does not substitute another owner's id", () => {
-    const firstOwner = applicationOwnerWhere("owner-a");
-    const secondOwner = applicationOwnerWhere("owner-b");
+    const firstOwner = opportunityOwnerWhere("owner-a");
+    const secondOwner = opportunityOwnerWhere("owner-b");
 
     expect(firstOwner).toEqual({ ownerId: "owner-a" });
     expect(secondOwner).toEqual({ ownerId: "owner-b" });

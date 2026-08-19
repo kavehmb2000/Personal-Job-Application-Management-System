@@ -17,6 +17,7 @@ export default defineConfig({
           name: "unit",
           include: ["tests/unit/**/*.test.ts", "tests/unit/**/*.test.tsx"],
           environment: "node",
+          setupFiles: ["./tests/setup.ts"],
         },
       },
       {
@@ -28,6 +29,7 @@ export default defineConfig({
             "tests/integration/**/*.test.tsx",
           ],
           environment: "node",
+          setupFiles: ["./tests/setup.ts"],
         },
       },
     ],

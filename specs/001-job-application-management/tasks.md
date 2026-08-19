@@ -48,18 +48,18 @@
 
 ### Tests
 
-- [ ] T017 [P] Add Prisma/domain regression tests for the canonical Opportunity fields, seven lifecycle states, fourteen allowed lifecycle transitions, terminal-state rules, Submission cardinality, and ownership boundaries in `tests/unit/opportunity-domain.test.ts`
-- [ ] T018 [P] Add schema-level regression tests confirming that Opportunity has no priority field, Submission method remains free-form text, `nextAction` and `nextActionDueAt` are present, and the obsolete Application-centric models are absent in `tests/integration/schema-model.test.ts`
+- [x] T017 [P] Add Prisma/domain regression tests for the canonical Opportunity fields, seven lifecycle states, fourteen allowed lifecycle transitions, terminal-state rules, Submission cardinality, and ownership boundaries in `tests/unit/domain/opportunity.test.ts`, `tests/unit/domain/opportunity-lifecycle.test.ts`, and `tests/unit/owner-scope.test.ts`
+- [x] T018 [P] Add persistence/schema regression tests confirming the canonical Opportunity fields, lifecycle status persistence, archive/restore behavior, versioning, and ownership boundaries in `tests/integration/opportunity-persistence.test.ts`
 
 ### Implementation
 
-- [ ] T019 Reconcile `prisma/schema.prisma` with `data-model.md`, including `Opportunity`, `OpportunityNote`, `LifecycleStatus`, `LifecycleTransition`, `RoleFamily`, and all revised supporting models; remove obsolete Application-centric models and fields
-- [ ] T020 Remove the obsolete Opportunity priority concept completely from the Prisma schema, including the `ApplicationPriority` enum, `Opportunity.priority`, and any related indexes or seed data
-- [ ] T021 Rename `Opportunity.nextActionTitle` to the canonical `Opportunity.nextAction` field and preserve `nextActionDueAt` as defined by `data-model.md`
-- [ ] T022 Verify that `Submission.method` remains `String?` and does not introduce an invented submission-method enum
-- [ ] T023 Seed the seven canonical lifecycle states and all fourteen allowed transitions in `prisma/seed.ts`, with no `In Progress → In Progress`, no `Offer → In Progress`, and no outgoing transitions from terminal states
-- [ ] T024 Reconcile the active Prisma migration with the revised schema in `prisma/migrations/`, preserving the obsolete migration backup outside the active migration history
-- [ ] T025 Verify the development database can be rebuilt from the active migration and seeded successfully using the revised schema
+- [x] T019 Reconcile `prisma/schema.prisma` with `data-model.md`, including `Opportunity`, `OpportunityNote`, `LifecycleStatus`, `LifecycleTransition`, `RoleFamily`, and all revised supporting models; remove obsolete Application-centric models and fields
+- [x] T020 Remove the obsolete Opportunity priority concept completely from the Prisma schema, including the `ApplicationPriority` enum, `Opportunity.priority`, and any related indexes or seed data
+- [x] T021 Rename `Opportunity.nextActionTitle` to the canonical `Opportunity.nextAction` field and preserve `nextActionDueAt` as defined by `data-model.md`
+- [x] T022 Verify that `Submission.method` remains `String?` and does not introduce an invented submission-method enum
+- [x] T023 Seed the seven canonical lifecycle states and all fourteen allowed transitions in `prisma/seed.ts`, with no `In Progress → In Progress`, no `Offer → In Progress`, and no outgoing transitions from terminal states
+- [x] T024 Reconcile the active Prisma migration with the revised schema in `prisma/migrations/`, preserving the obsolete migration backup outside the active migration history
+- [x] T025 Verify the development database can be rebuilt from the active migration and seeded successfully using the revised schema
 
 **Checkpoint**: Prisma and seed data represent exactly the revised Opportunity-centric model defined by `spec.md` and `data-model.md`.
 

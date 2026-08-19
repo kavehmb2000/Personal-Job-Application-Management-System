@@ -31,12 +31,6 @@ enum LifecycleStateKey {
   REJECTED
 }
 
-enum ApplicationPriority {
-  LOW
-  NORMAL
-  HIGH
-  URGENT
-}
 
 enum OpportunityEventType {
   OPPORTUNITY_CREATED
@@ -242,14 +236,13 @@ model Opportunity {
 
   source   String?
   fitScore Int?
-  priority ApplicationPriority @default(NORMAL)
 
   discoveredAt DateTime @default(now())
 
   statusId     String
   roleFamilyId String?
 
-  nextActionTitle String?
+  nextAction String?
   nextActionDueAt DateTime?
 
   owner      OwnerAccount    @relation(fields: [ownerId], references: [id], onDelete: Restrict)
@@ -268,7 +261,6 @@ model Opportunity {
   @@index([ownerId, archivedAt])
   @@index([ownerId, statusId])
   @@index([ownerId, discoveredAt])
-  @@index([ownerId, priority])
   @@index([ownerId, roleFamilyId])
   @@index([ownerId, country])
   @@index([ownerId, source])

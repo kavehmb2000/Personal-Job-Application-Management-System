@@ -107,7 +107,7 @@ Changing the current state MUST NOT erase historical events.
 
 # 3. Lifecycle
 
-The MVP uses a deliberately small finite state machine.
+The MVP uses a deliberately small finite state machine with seven stable semantic lifecycle states.
 
 ## 3.1 States
 
@@ -118,8 +118,10 @@ The default states are:
 3. **In Progress**
 4. **Offer**
 5. **Closed**
+6. **Cancelled**
+7. **Rejected**
 
-`Closed` represents opportunities that will no longer receive active attention.
+`Closed`, `Cancelled`, and `Rejected` are terminal states. They represent opportunities that will no longer receive active attention.
 
 Closure may occur because of:
 
@@ -131,7 +133,13 @@ Closure may occur because of:
 * user decision not to continue;
 * other terminal circumstances.
 
-The specific reason is recorded as contextual information/event data rather than requiring a separate lifecycle state.
+The lifecycle state distinguishes the semantic outcome where useful:
+
+* `Closed` represents a general terminal closure;
+* `Cancelled` represents an opportunity cancelled by the user or otherwise cancelled;
+* `Rejected` represents an opportunity rejected by the employer/recruiter or otherwise explicitly rejected.
+
+The specific circumstances may additionally be recorded as contextual information or event data.
 
 ### Offer
 
@@ -156,24 +164,33 @@ The lifecycle is:
 Discovered
    ├──→ Submitted
    └──→ Closed
+   └──→ Cancelled
 
 Submitted
    ├──→ In Progress
    └──→ Closed
+   └──→ Cancelled
+   └──→ Rejected
 
 In Progress
-   ├──→ In Progress
    ├──→ Offer
-   └──→ Closed
+   ├──→ Closed
+   ├──→ Cancelled
+   └──→ Rejected
 
 Offer
-   ├──→ Offer
-   └──→ Closed
+  ├──→ Closed
+  ├──→ Cancelled
+  └──→ Rejected
 ```
 
-`In Progress → In Progress` is not normally a meaningful state transition and does not create a lifecycle event.
+There is no `In Progress → In Progress` lifecycle transition.
 
-The important principle is that **almost all non-state-changing activity occurs while the Opportunity is In Progress**.
+There is no `Offer → In Progress` transition.
+`Closed`, `Cancelled`, and `Rejected` are terminal states and have no outgoing lifecycle transitions.
+
+The important principle is that **almost all non-state-changing activity
+occurs while the Opportunity is In Progress.**
 
 The system MUST prevent invalid lifecycle transitions.
 
