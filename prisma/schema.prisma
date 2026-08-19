@@ -278,12 +278,9 @@ model OpportunityNote {
   title        String?
   bodyMarkdown String
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
   opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
 
-  @@index([opportunityId, createdAt])
+  @@index([opportunityId])
 }
 
 // -----------------------------------------------------------------------------

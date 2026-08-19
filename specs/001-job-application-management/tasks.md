@@ -71,20 +71,20 @@
 
 ### Tests
 
-- [ ] T026 [P] Add Opportunity repository tests for create, read, update, archive, restore, owner isolation, and optimistic-concurrency conflicts in `tests/unit/opportunity-repository.test.ts`
-- [ ] T027 [P] Add lifecycle transition tests covering all fourteen valid transitions and invalid transitions in `tests/unit/lifecycle-service.test.ts`
-- [ ] T028 [P] Add lifecycle transaction tests proving that a successful state change and its corresponding OpportunityEvent are committed together in `tests/integration/lifecycle-transition.test.ts`
-- [ ] T029 [P] Add tests proving that `In Progress → In Progress` is not a lifecycle transition and that non-state-changing events can occur while the Opportunity remains in the same state in `tests/unit/opportunity-event.test.ts`
-- [ ] T030 [P] Add OpportunityNote tests proving notes are independently editable and are not automatically converted into OpportunityEvents in `tests/unit/opportunity-note.test.ts`
+- [x] T026 [P] Add Opportunity repository tests for create, read, update, archive, owner isolation, and optimistic-concurrency conflicts in `tests/unit/opportunity-repository.test.ts`
+- [x] T027 [P] Add lifecycle transition tests covering all fourteen valid transitions and invalid transitions in `tests/unit/lifecycle-service.test.ts`
+- [x] T028 [P] Add lifecycle transaction tests proving that a successful state change and its corresponding OpportunityEvent are committed together in `tests/integration/lifecycle-transition.test.ts`
+- [x] T029 [P] Add tests proving that `In Progress → In Progress` is not a lifecycle transition and that non-state-changing events can occur while the Opportunity remains in the same state in `tests/unit/opportunity-event.test.ts`
+- [x] T030 [P] Add OpportunityNote tests proving notes are independently editable and are not automatically converted into OpportunityEvents in `tests/unit/opportunity-note.test.ts`
 
 ### Implementation
 
-- [ ] T031 Implement owner-scoped Opportunity, OpportunityNote, LifecycleStatus, LifecycleTransition, and RoleFamily repositories in `lib/repositories/`
-- [ ] T032 Implement Opportunity create/update/archive/restore service with initial `Discovered` state and optimistic-concurrency checks in `lib/services/opportunity-service.ts`
-- [ ] T033 Implement lifecycle transition service using persisted `LifecycleTransition` rules in `lib/services/lifecycle-service.ts`
-- [ ] T034 Implement atomic lifecycle transition plus corresponding state-changing OpportunityEvent creation in `lib/services/lifecycle-service.ts`
-- [ ] T035 Implement significant non-state-changing OpportunityEvent creation with chronological history and optional contextual Artefact associations in `lib/services/opportunity-event-service.ts`
-- [ ] T036 Implement OpportunityNote create/update/archive behavior independently of OpportunityEvent history in `lib/services/opportunity-note-service.ts`
+- [x] T031 Implement owner-scoped Opportunity, OpportunityNote, LifecycleStatus, LifecycleTransition, and RoleFamily repositories in `lib/repositories/`
+- [x] T032 Implement Opportunity create/update/archive service with initial Discovered state and optimistic-concurrency checks in lib/services/opportunity-service.ts
+- [x] T033 Implement lifecycle transition service using persisted `LifecycleTransition` rules in `lib/services/lifecycle-service.ts`
+- [x] T034 Implement atomic lifecycle transition plus corresponding state-changing OpportunityEvent creation in `lib/services/lifecycle-service.ts`
+- [x] T035 Implement significant non-state-changing OpportunityEvent creation with chronological history and optional contextual Artefact associations in `lib/services/opportunity-event-service.ts`
+- [x] T036 Implement OpportunityNote create/update behavior independently of OpportunityEvent history in `lib/services/opportunity-note-service.ts`
 
 **Checkpoint**: An Opportunity can move only through the canonical fourteen-transition FSM, while significant history remains distinct from notes and ordinary CRUD changes.
 
