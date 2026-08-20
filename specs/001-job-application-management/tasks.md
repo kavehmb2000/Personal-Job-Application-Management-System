@@ -71,7 +71,7 @@
 
 ### Tests
 
-- [x] T026 [P] Add Opportunity repository tests for create, read, update, archive, owner isolation, and optimistic-concurrency conflicts in `tests/unit/opportunity-repository.test.ts`
+- [x] T026 [P] Add Opportunity repository tests for create, read, update, archive, restore, owner isolation, and optimistic-concurrency conflicts in `tests/unit/opportunity-repository.test.ts`
 - [x] T027 [P] Add lifecycle transition tests covering all fourteen valid transitions and invalid transitions in `tests/unit/lifecycle-service.test.ts`
 - [x] T028 [P] Add lifecycle transaction tests proving that a successful state change and its corresponding OpportunityEvent are committed together in `tests/integration/lifecycle-transition.test.ts`
 - [x] T029 [P] Add tests proving that `In Progress → In Progress` is not a lifecycle transition and that non-state-changing events can occur while the Opportunity remains in the same state in `tests/unit/opportunity-event.test.ts`
@@ -79,7 +79,7 @@
 
 ### Implementation
 
-- [x] T031 Implement owner-scoped Opportunity, OpportunityNote, LifecycleStatus, LifecycleTransition, and RoleFamily repositories in `lib/repositories/`
+- [x] T031 Implement owner-scoped- Opportunity, OpportunityNote, LifecycleStatus, LifecycleTransition, and RoleFamily repositories in `lib/repositories/`
 - [x] T032 Implement Opportunity create/update/archive service with initial Discovered state and optimistic-concurrency checks in lib/services/opportunity-service.ts
 - [x] T033 Implement lifecycle transition service using persisted `LifecycleTransition` rules in `lib/services/lifecycle-service.ts`
 - [x] T034 Implement atomic lifecycle transition plus corresponding state-changing OpportunityEvent creation in `lib/services/lifecycle-service.ts`
@@ -96,19 +96,19 @@
 
 ### Tests
 
-- [ ] T037 [P] Add Submission tests for zero-or-one cardinality, successful submission transition, reapplication through a new Opportunity, and immutable identification of the selected CV/cover-letter Artefacts in `tests/unit/submission-service.test.ts`
-- [ ] T038 [P] Add Artefact tests for independent identity, reusable associations, representation validation, and archive/restore behavior in `tests/unit/artefact-service.test.ts`
-- [ ] T039 [P] Add ownership tests preventing an Opportunity from referencing another owner's Artefacts in `tests/integration/artefact-ownership.test.ts`
-- [ ] T040 [P] Add tests for OpportunityArtefact, EventArtefact, and CommunicationArtefact associations without treating association changes as automatic domain events in `tests/unit/artefact-associations.test.ts`
+- [x] T037 [P] Add Submission tests for zero-or-one cardinality, successful submission transition, reapplication through a new Opportunity, and immutable identification of the selected CV/cover-letter Artefacts in `tests/unit/submission-service.test.ts`
+- [x] T038 [P] Add Artefact tests for independent identity, reusable associations, representation validation, and archive/restore behavior in `tests/unit/artefact-service.test.ts`
+- [x] T039 [P] Add ownership tests preventing an Opportunity from referencing another owner's Artefacts in `tests/integration/artefact-ownership.test.ts`
+- [x] T040 [P] Add tests for OpportunityArtefact, EventArtefact, and CommunicationArtefact associations without treating association changes as automatic domain events in `tests/unit/artefact-associations.test.ts`
 
 ### Implementation
 
-- [ ] T041 Implement owner-scoped Artefact repository and service for creation, retrieval, association, archive, and restore in `lib/repositories/artefact-repository.ts` and `lib/services/artefact-service.ts`
-- [ ] T042 Implement OpportunityArtefact and EventArtefact association operations in `lib/services/artefact-association-service.ts`
-- [ ] T043 Implement Submission repository and service enforcing zero-or-one Submission per Opportunity in `lib/repositories/submission-repository.ts` and `lib/services/submission-service.ts`
-- [ ] T044 Implement transactional formal Submission creation that changes `Discovered` to `Submitted` and creates the corresponding historical event
-- [ ] T045 Ensure selected Submission Artefact references remain identifiable independently of later Artefact creation or association changes
-- [ ] T046 Implement the reapplication rule: a later application attempt is represented by a new Opportunity rather than a second Submission
+- [x] T041 Implement owner-scoped Artefact repository and service for creation, retrieval, association, archive, and restore in `lib/repositories/artefact-repository.ts` and `lib/services/artefact-service.ts`
+- [x] T042 Implement OpportunityArtefact and EventArtefact association operations in `lib/services/artefact-association-service.ts`
+- [x] T043 Implement Submission repository and service enforcing zero-or-one Submission per Opportunity in `lib/repositories/submission-repository.ts` and `lib/services/submission-service.ts`
+- [x] T044 Implement transactional formal Submission creation that changes `Discovered` to `Submitted` and creates the corresponding historical event
+- [x] T045 Ensure selected Submission Artefact references remain identifiable independently of later Artefact creation or association changes
+- [x] T046 Implement the reapplication rule: a later application attempt is represented by a new Opportunity rather than a second Submission
 
 **Checkpoint**: Artefacts are reusable domain records, while each Opportunity can have zero or one formal Submission.
 
@@ -359,7 +359,7 @@ Kanban / Workspace / Search / Dashboard
 - T106–T108 can proceed in parallel.
 - T115–T118 can proceed in parallel during final hardening.
 - 
-## Implementation Strateg
+## Implementation Strategy
 ### MVP First
 1. Complete Setup and Foundational phases.
 2. Reconcile and establish the canonical Opportunity-centric Prisma model.
