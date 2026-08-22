@@ -120,21 +120,21 @@
 
 ### Tests
 
-- [ ] T047 [P] Add UserAction tests for status, priority, due date, completion, optimistic concurrency, and owner isolation in `tests/unit/user-action-service.test.ts`
-- [ ] T048 [P] Add ScheduledEvent tests for event types, time/timezone handling, completion/cancellation, Opportunity association, and contact association in `tests/unit/scheduled-event-service.test.ts`
-- [ ] T049 [P] Add Contact and OpportunityContact tests for owner isolation and association integrity in `tests/unit/contact-service.test.ts`
-- [ ] T050 [P] Add Communication and CommunicationArtefact tests for manual entry, direction, contact association, Artefact association, and optional OpportunityEvent creation in `tests/unit/communication-service.test.ts`
+- [x] T047 [P] Add UserAction tests for status, priority, due date, completion, optimistic concurrency, and owner isolation in `tests/unit/user-action-service.test.ts`
+- [x] T048 [P] Add ScheduledEvent tests for event types, time/timezone handling, Opportunity association, and contact association in `tests/unit/scheduled-event-service.test.ts`
+- [x] T049 [P] Add Contact and OpportunityContact tests for owner isolation and association integrity in `tests/unit/contact-service.test.ts`
+- [x] T050 [P] Add Communication and CommunicationArtefact tests for Opportunity ownership, occurredAt chronology, optional free-form contact and subject, optional body, Artefact association, and optional OpportunityEvent creation in `tests/unit/communication-service.test.ts`
 - [ ] T051 [P] Add cross-owner association integration tests for Opportunity, Contact, ScheduledEvent, Communication, Artefact, and Submission relationships in `tests/integration/domain-ownership.test.ts`
 
 ### Implementation
 
-- [ ] T052 Implement owner-scoped UserAction repository and service in `lib/repositories/user-action-repository.ts` and `lib/services/user-action-service.ts`
-- [ ] T053 Implement ScheduledEvent repository and service, including `ScheduledEventContact`, in `lib/repositories/scheduled-event-repository.ts` and `lib/services/scheduled-event-service.ts`
-- [ ] T054 Implement Contact and OpportunityContact repositories/services in `lib/repositories/contact-repository.ts` and `lib/services/contact-service.ts`
-- [ ] T055 Implement ScheduledEventContact association operations with explicit cross-owner validation
-- [ ] T056 Implement Communication and CommunicationArtefact repositories/services in `lib/repositories/communication-repository.ts` and `lib/services/communication-service.ts`
-- [ ] T057 Implement Opportunity-scoped communication/contact relationships without introducing a separate CRM aggregate
-- [ ] T058 Ensure significant communications may create OpportunityEvents while communication records remain semantically distinct from event history
+- [x] T052 Implement owner-scoped UserAction repository and service in `lib/repositories/user-action-repository.ts` and `lib/services/user-action-service.ts`
+- [x] T053 Implement ScheduledEvent repository and service, including `ScheduledEventContact`, in `lib/repositories/scheduled-event-repository.ts` and `lib/services/scheduled-event-service.ts`
+- [x] T054 Implement Contact and OpportunityContact repositories/services in `lib/repositories/contact-repository.ts` and `lib/services/contact-service.ts`
+- [x] T055 Implement ScheduledEventContact association operations with explicit cross-owner validation between the ScheduledEvent's Opportunity owner and the Contact owner
+- [x] T056 Implement Opportunity-scoped Communication and CommunicationArtefact repositories/services in `lib/repositories/communication-repository.ts` and `lib/services/communication-service.ts`
+- [x] T057 Implement lightweight Opportunity-scoped communications using a free-form contact text field without introducing a CommunicationContact association or CRM aggregate
+- [x] T058 Ensure significant communications may create OpportunityEvents while Communication records remain semantically distinct from historical event records
 
 **Checkpoint**: Historical events, user actions, scheduled events, communications, contacts, notes, and lifecycle state remain distinct concepts.
 

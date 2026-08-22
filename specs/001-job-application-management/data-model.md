@@ -447,30 +447,40 @@ The Opportunity workspace may present these together while preserving their sema
 
 ## 13. Communications
 
-Communications are deliberately lightweight in the MVP.
+Communications are deliberately lightweight in the MVP and are scoped directly to an Opportunity.
 
-A communication may contain:
+A Communication may contain:
 
-- date/time;
-- direction;
-- sender;
-- recipient;
-- subject;
-- body/notes;
+- `occurredAt` — required date/time of the communication;
+- `contact` — optional free-form text identifying the person or communication handle;
+- `subject` — optional text;
+- `bodyMarkdown` — optional Markdown/text containing the copied message, reply, or manually recorded summary;
 - optional associated Artefacts.
 
-Communications are manually entered.
+The `contact` field is intentionally text rather than a Contact foreign key. The user may use conventions such as `marc@mistral.ai`, `whatsapp:a.j`, or `telegram:@charles` without requiring the system to understand or model every communication platform.
 
-The MVP does not automatically synchronize Gmail or Outlook.
+The MVP does not require a communication direction field. A communication may represent an outgoing message, an incoming reply, a referral request, advice received, or another interaction.
 
-A significant communication may also create an OpportunityEvent when useful, but communication storage and event history remain conceptually distinct.
+Successive significant messages from the same contact and subject may be recorded as separate chronological Communication records.
 
----
+Communication records do not require `createdAt` or `updatedAt` timestamps. `occurredAt` is the authoritative chronology for the communication history.
+
+Communications are manually entered. The MVP does not automatically synchronize Gmail, Outlook, WhatsApp, WeChat, Telegram, LinkedIn, or other messaging platforms.
+
+A significant communication may also create an `OpportunityEvent` when useful, but communication storage and event history remain conceptually distinct.
+
+There is no separate CommunicationContact association table in the MVP.
+
+### 13.1 Communication–Artefact association
+
+A Communication may have zero or more associated Artefacts through `CommunicationArtefact`.
+
+**The association does not itself create an OpportunityEvent.**
 
 ## 14. Contacts
 
-Contacts provide lightweight contextual information for people related to an Opportunity.
-
+Contacts provide lightweight contextual information for people related to Opportunities.
+A Contact may be associated with an Opportunity through OpportunityContact and may also be associated with ScheduledEvents. A Communication does not require a Contact record because its contact field is intentionally free-form text.
 Examples:
 
 - recruiter;

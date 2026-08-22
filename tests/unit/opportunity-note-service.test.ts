@@ -117,8 +117,6 @@ describe("OpportunityNoteService", () => {
             id: "note-1",
             opportunityId: "opportunity-1",
             ...input,
-            createdAt,
-            updatedAt,
         });
 
         await service.update(

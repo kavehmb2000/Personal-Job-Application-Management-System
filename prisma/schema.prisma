@@ -31,7 +31,6 @@ enum LifecycleStateKey {
   REJECTED
 }
 
-
 enum OpportunityEventType {
   OPPORTUNITY_CREATED
   OPPORTUNITY_SUBMITTED
@@ -66,11 +65,6 @@ enum ArtefactType {
   AUDIO
   VIDEO
   OTHER
-}
-
-enum CommunicationDirection {
-  INCOMING
-  OUTGOING
 }
 
 enum ContactRoleType {
@@ -242,7 +236,7 @@ model Opportunity {
   statusId     String
   roleFamilyId String?
 
-  nextAction String?
+  nextAction      String?
   nextActionDueAt DateTime?
 
   owner      OwnerAccount    @relation(fields: [ownerId], references: [id], onDelete: Restrict)
@@ -491,7 +485,6 @@ model Contact {
 
   owner           OwnerAccount            @relation(fields: [ownerId], references: [id], onDelete: Restrict)
   opportunities   OpportunityContact[]
-  communications  Communication[]
   scheduledEvents ScheduledEventContact[]
 
   @@index([ownerId])
@@ -537,34 +530,22 @@ model Communication {
   id            String @id @default(uuid())
   opportunityId String
 
-  occurredAt DateTime
-  direction  CommunicationDirection
-
-  sender       String?
-  recipient    String?
+  occurredAt   DateTime
+  contact      String?
   subject      String?
   bodyMarkdown String?
 
-  contactId String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
   opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
-  contact     Contact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
   artefacts CommunicationArtefact[]
 
   @@index([opportunityId, occurredAt])
-  @@index([contactId])
 }
 
 model CommunicationArtefact {
   id              String @id @default(uuid())
   communicationId String
   artefactId      String
-
-  createdAt DateTime @default(now())
 
   communication Communication @relation(fields: [communicationId], references: [id], onDelete: Cascade)
   artefact      Artefact      @relation(fields: [artefactId], references: [id], onDelete: Restrict)

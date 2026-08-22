@@ -392,32 +392,71 @@ The workspace can distinguish:
 
 ## T026 — Implement lightweight communications and contacts
 
-**Goal:** Capture useful communication context without creating a CRM.
+**Goal:** Capture useful recruitment communication context and relevant people without turning the system into a CRM.
 
 ### Scope
 
-Communications:
+#### Communications
 
-- date/time;
-- direction;
-- sender;
-- recipient;
-- subject;
-- body/notes;
-- optional Artefact associations.
+A Communication belongs to an Opportunity and supports:
 
-Contacts:
+* occurrence date/time;
+* subject;
+* body/notes;
+* optional Contact association;
+* optional Artefact associations.
 
-- name;
-- role;
-- organization;
-- useful contact details.
+The MVP does not require a communication direction, sender, or recipient field.
 
-No automatic Gmail/Outlook synchronization.
+Communications are historical records. Creating or editing a Communication does not automatically change the Opportunity lifecycle state.
+
+Communications remain scoped through their owning Opportunity.
+
+Supported operations include:
+
+* create;
+* retrieve by ID;
+* update;
+* retrieve Communications for an Opportunity;
+* associate an Artefact;
+* remove an Artefact association;
+* retrieve Artefacts associated with a Communication.
+
+Communication–Artefact associations must respect the same owner/Opportunity boundary as the Communication itself.
+
+#### Contacts
+
+Contacts provide lightweight information about relevant people associated with an Opportunity.
+
+A Contact supports:
+
+* name;
+* role;
+* organization;
+* useful contact details.
+
+Contacts are not intended to provide CRM functionality or automatic synchronization.
+
+### Rules
+
+* A Communication may exist without a Contact.
+* A Communication may have zero or more associated Artefacts.
+* Artefacts may be reused across Communications and Opportunities.
+* Cross-owner associations are forbidden.
+* Duplicate Communication–Artefact associations are forbidden.
+* Removing an association does not delete either the Communication or the Artefact.
+* No automatic Gmail/Outlook synchronization is implemented in the MVP.
 
 ### Acceptance
 
-The user can manually record meaningful communication and associate it with an Opportunity.
+* The user can manually record a Communication against an Opportunity.
+* A Communication can optionally be associated with a Contact.
+* A Communication can be associated with one or more Artefacts.
+* Communication and Artefact operations cannot cross Opportunity-owner boundaries.
+* Communications can be retrieved for an Opportunity.
+* Communication history remains available independently of later lifecycle changes.
+* Contact management remains lightweight and does not become a CRM subsystem.
+* Repository and service tests cover owner scoping, CRUD behavior, Contact association, Artefact association, duplicate prevention, and retrieval.
 
 ---
 
