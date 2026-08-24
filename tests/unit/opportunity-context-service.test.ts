@@ -271,4 +271,150 @@ describe("OpportunityContextService", () => {
     expect(result).not.toBeNull();
     expect(result?.nextScheduledEvent).toBeNull();
   });
+
+  it("selects the earliest upcoming scheduled event and ignores past events", async () => {
+    const pastEvent = {
+      id: "scheduled-past",
+      scheduledAt: new Date("2000-01-01T10:00:00.000Z"),
+    };
+
+    const laterEvent = {
+      id: "scheduled-later",
+      scheduledAt: new Date("2099-09-01T10:00:00.000Z"),
+    };
+
+    const earlierEvent = {
+      id: "scheduled-earlier",
+      scheduledAt: new Date("2099-08-28T10:00:00.000Z"),
+    };
+
+    const repository = createRepository({
+      opportunity,
+      notes: [],
+      events: [],
+      submission: null,
+      artefacts: [],
+      actions: [],
+      scheduledEvents: [pastEvent, laterEvent, earlierEvent],
+      contacts: [],
+      communications: [],
+    });
+
+    const service = new OpportunityContextService(repository as never);
+
+    const result = await service.getContext(ownerId, opportunityId);
+
+    expect(result?.nextScheduledEvent?.id).toBe("scheduled-earlier");
+  });
+
+  it("returns null when every scheduled event is in the past", async () => {
+    const repository = createRepository({
+      opportunity,
+      notes: [],
+      events: [],
+      submission: null,
+      artefacts: [],
+      actions: [],
+      scheduledEvents: [
+        {
+          id: "scheduled-past-1",
+          scheduledAt: new Date("2000-01-01T10:00:00.000Z"),
+        },
+        {
+          id: "scheduled-past-2",
+          scheduledAt: new Date("2001-01-01T10:00:00.000Z"),
+        },
+      ],
+      contacts: [],
+      communications: [],
+    });
+
+    const service = new OpportunityContextService(repository as never);
+
+    const result = await service.getContext(ownerId, opportunityId);
+
+    expect(result?.nextScheduledEvent).toBeNull();
+  });
+
+  it("preserves repository ordering when scheduled events have the same timestamp", async () => {
+    const sameTime = new Date("2099-08-28T10:00:00.000Z");
+
+    const firstEvent = {
+      id: "scheduled-a",
+      scheduledAt: sameTime,
+    };
+
+    const secondEvent = {
+      id: "scheduled-b",
+      scheduledAt: sameTime,
+    };
+
+    const repository = createRepository({
+      opportunity,
+      notes: [],
+      events: [],
+      submission: null,
+      artefacts: [],
+      actions: [],
+      scheduledEvents: [firstEvent, secondEvent],
+      contacts: [],
+      communications: [],
+    });
+
+    const service = new OpportunityContextService(repository as never);
+
+    const result = await service.getContext(ownerId, opportunityId);
+
+    expect(result?.nextScheduledEvent?.id).toBe("scheduled-a");
+  });
+
+  it("returns Opportunity next-action fields exactly as maintained on the Opportunity", async () => {
+    const nextActionDueAt = new Date("2099-09-15T12:00:00.000Z");
+
+    const userAction = {
+      id: "action-1",
+      opportunityId,
+      title: "A different actionable task",
+      descriptionMarkdown: null,
+      status: "TODO",
+      priority: "HIGH",
+      dueAt: new Date("2099-08-25T12:00:00.000Z"),
+      completedAt: null,
+      version: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const repository = createRepository({
+      opportunity: {
+        ...opportunity,
+        nextAction: "Review interview feedback",
+        nextActionDueAt,
+      },
+      notes: [],
+      events: [],
+      submission: null,
+      artefacts: [],
+      actions: [userAction],
+      scheduledEvents: [],
+      contacts: [],
+      communications: [],
+    });
+
+    const service = new OpportunityContextService(repository as never);
+
+    const result = await service.getContext(ownerId, opportunityId);
+
+    expect(result).not.toBeNull();
+
+    expect(result?.nextAction).toBe("Review interview feedback");
+
+    expect(result?.nextActionDueAt).toEqual(nextActionDueAt);
+
+    expect(result?.actions).toEqual([userAction]);
+
+    expect(result?.nextAction).not.toBe(userAction.title);
+
+    expect(result?.nextActionDueAt).not.toEqual(userAction.dueAt);
+  });
 });

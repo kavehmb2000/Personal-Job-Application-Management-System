@@ -46,6 +46,19 @@ export class OpportunityContextService {
   ) {
     const now = new Date();
 
-    return scheduledEvents.find((event) => event.scheduledAt >= now) ?? null;
+    return (
+      scheduledEvents
+        .filter((event) => event.scheduledAt >= now)
+        .sort((a, b) => {
+          const scheduledAtDifference =
+            a.scheduledAt.getTime() - b.scheduledAt.getTime();
+
+          if (scheduledAtDifference !== 0) {
+            return scheduledAtDifference;
+          }
+
+          return a.id.localeCompare(b.id);
+        })[0] ?? null
+    );
   }
 }
