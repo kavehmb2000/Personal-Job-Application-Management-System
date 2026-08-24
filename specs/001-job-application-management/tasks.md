@@ -146,17 +146,17 @@
 
 ### Tests
 
-- [ ] T059 [P] Add Opportunity Workspace projection tests for current state, next action, next scheduled event, notes, events, Artefacts, actions, scheduled events, communications, contacts, and Submission in `tests/unit/opportunity-context-service.test.ts`
+- [x] T059 [P] Add Opportunity Workspace projection tests for current state, next action, next scheduled event, notes, events, Artefacts, actions, scheduled events, communications, contacts, and Submission in `tests/unit/opportunity-context-service.test.ts`
 - [x] T060 [P] Add integration tests proving the Workspace projection respects owner boundaries and does not expose records from another owner in `tests/integration/opportunity-context.test.ts`
 - [x] T061 [P] Add tests proving that `nextAction` and `nextActionDueAt` remain consistent with the explicitly maintained Opportunity-level next-action information while UserAction remains the richer actionable record
 
 ### Implementation
 
-- [ ] T062 Implement the composed Opportunity context service in `lib/services/opportunity-context-service.ts`
-- [ ] T063 Implement owner-scoped aggregation of Opportunity, current lifecycle state, notes, recent events, Submission, Artefacts, UserActions, ScheduledEvents, Contacts, and Communications
+- [x] T062 Implement the composed Opportunity context service in `lib/services/opportunity-context-service.ts`
+- [x] T063 Implement owner-scoped aggregation of Opportunity, current lifecycle state, notes, recent events, Submission, Artefacts, UserActions, ScheduledEvents, Contacts, and Communications
 - [x] T064 Implement next scheduled-event selection for Workspace/Kanban projections
-- [ ] T065 Implement Opportunity-level next-action handling using `nextAction` and `nextActionDueAt` without replacing the UserAction model
-- [ ] T066 Define service-level DTOs/read models so Prisma types do not leak into API or UI components in `lib/domain/` and `lib/services/`
+- [x] T065 Implement Opportunity-level next-action handling using `nextAction` and `nextActionDueAt` without replacing the UserAction model
+- [x] T066 Define service-level DTOs/read models so Prisma types do not leak into API or UI components in `lib/domain/` and `lib/services/`
 
 **Checkpoint**: The Opportunity Workspace has one coherent context surface while preserving the semantic distinctions established by the data model.
 
