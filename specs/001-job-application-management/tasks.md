@@ -124,7 +124,7 @@
 - [x] T048 [P] Add ScheduledEvent tests for event types, time/timezone handling, Opportunity association, and contact association in `tests/unit/scheduled-event-service.test.ts`
 - [x] T049 [P] Add Contact and OpportunityContact tests for owner isolation and association integrity in `tests/unit/contact-service.test.ts`
 - [x] T050 [P] Add Communication and CommunicationArtefact tests for Opportunity ownership, occurredAt chronology, optional free-form contact and subject, optional body, Artefact association, and optional OpportunityEvent creation in `tests/unit/communication-service.test.ts`
-- [ ] T051 [P] Add cross-owner association integration tests for Opportunity, Contact, ScheduledEvent, Communication, Artefact, and Submission relationships in `tests/integration/domain-ownership.test.ts`
+- [x] T051 [P] Add cross-owner association integration tests for Opportunity, Contact, ScheduledEvent, Communication, Artefact, and Submission relationships in `tests/integration/domain-ownership.test.ts`
 
 ### Implementation
 
