@@ -2,7 +2,7 @@
 
 **Input**: Design documents from `specs/001-job-application-management/`
 
-**Prerequisites**: [plan.md](./plan.md), [spec.md](./spec.md), [research.md](./research.md), [data-model.md](./data-model.md), [quickstart.md](./quickstart.md), and [application-api.openapi.yaml](./contracts/application-api.openapi.yaml)
+**Prerequisites**: [plan.md](./plan.md), [spec.md](./spec.md), [research.md](./research.md), [data-model.md](./data-model.md), [quickstart.md](./quickstart.md), and [opportunity-api.openapi.yaml](./contracts/opportunity-api.openapi.yaml)
 
 **Tests**: Included because the plan requires Vitest integration/domain coverage, Playwright desktop/mobile coverage, and contract validation for the critical workflows.
 
@@ -174,7 +174,7 @@
 
 ### Implementation
 
-- [ ] T070 Rename the API contract filename from the legacy application-oriented name to an Opportunity-oriented name and update references in the specification documents and tooling
+- [x] T070 Rename the API contract filename from the legacy application-oriented name to an Opportunity-oriented name and update references in the specification documents and tooling
 - [ ] T071 Implement `GET`/`POST /api/opportunities` in `app/api/opportunities/route.ts`
 - [ ] T072 Implement `GET`/`PATCH`/`DELETE /api/opportunities/[opportunityId]` with owner scoping and optimistic-concurrency handling in `app/api/opportunities/[opportunityId]/route.ts`
 - [ ] T073 Implement `POST /api/opportunities/[opportunityId]/transition` using the lifecycle service in `app/api/opportunities/[opportunityId]/transition/route.ts`
