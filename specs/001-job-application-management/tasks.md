@@ -176,7 +176,7 @@
 
 - [x] T070 Rename the API contract filename from the legacy application-oriented name to an Opportunity-oriented name and update references in the specification documents and tooling
 - [x] T071 Implement `GET`/`POST /api/opportunities` in `app/api/opportunities/route.ts`
-- [ ] T072 Implement `GET`/`PATCH`/`DELETE /api/opportunities/[opportunityId]` with owner scoping and optimistic-concurrency handling in `app/api/opportunities/[opportunityId]/route.ts`
+- [x] T072 Implement `GET`/`PATCH`/`DELETE /api/opportunities/[opportunityId]` with owner scoping and optimistic-concurrency handling in `app/api/opportunities/[opportunityId]/route.ts`
 - [ ] T073 Implement `POST /api/opportunities/[opportunityId]/transition` using the lifecycle service in `app/api/opportunities/[opportunityId]/transition/route.ts`
 - [ ] T074 Implement `POST /api/opportunities/[opportunityId]/submission` with zero-or-one enforcement and appropriate conflict responses
 - [ ] T075 Implement Opportunity event and note endpoints under `app/api/opportunities/[opportunityId]/`

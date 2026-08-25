@@ -1,4 +1,5 @@
 ﻿import type { Prisma, Opportunity } from "@prisma/client";
+import { ConflictError } from "@/lib/domain/errors";
 
 import { prisma } from "@/lib/db";
 import {
@@ -165,7 +166,7 @@ export class OpportunityRepository {
     expectedVersion: number,
   ): asserts count is 1 {
     if (count !== 1) {
-      throw new Error(
+      throw new ConflictError(
         `Opportunity ${opportunityId} could not be modified with expected version ${expectedVersion}`,
       );
     }
