@@ -1,0 +1,2553 @@
+﻿openapi: 3.1.0
+
+info:
+  title: Personal Job Application Management API
+  version: 1.0.0
+  description: >
+    Version 1 API for the single-user Personal Job Application Management
+    System. The API exposes the owner-scoped Opportunity workspace and its
+    supporting resources. Lifecycle transitions, submission, optimistic
+    concurrency, and storage operations are enforced by the application
+    service layer.
+
+servers:
+  - url: /api/v1
+    description: Version 1 API
+
+tags:
+  - name: Opportunities
+  - name: Lifecycle
+  - name: Submission
+  - name: Events
+  - name: Notes
+  - name: Workspace
+  - name: User Actions
+  - name: Scheduled Events
+  - name: Contacts
+  - name: Communications
+  - name: Artefacts
+  - name: Search
+  - name: Exports
+  - name: Storage
+
+paths:
+
+  # ===========================================================================
+  # Opportunities
+  # ===========================================================================
+
+  /opportunities:
+    get:
+      tags: [Opportunities]
+      operationId: listOpportunities
+      summary: List opportunities
+      description: >
+        Returns opportunities belonging to the current owner. Archived
+        opportunities are excluded unless explicitly requested.
+      parameters:
+        - $ref: '#/components/parameters/Status'
+        - $ref: '#/components/parameters/Search'
+        - $ref: '#/components/parameters/Country'
+        - $ref: '#/components/parameters/Location'
+        - $ref: '#/components/parameters/RoleFamilyId'
+        - $ref: '#/components/parameters/Source'
+        - $ref: '#/components/parameters/IncludeArchived'
+      responses:
+        '200':
+          description: Owner-scoped opportunity collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpportunityListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Opportunities]
+      operationId: createOpportunity
+      summary: Create an opportunity
+      description: >
+        Creates an opportunity in the DISCOVERED lifecycle state. The client
+        does not select the initial lifecycle state.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpportunityCreateInput'
+      responses:
+        '201':
+          description: Opportunity created
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Opportunity'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /opportunities/{opportunityId}:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+
+    get:
+      tags: [Opportunities]
+      operationId: getOpportunity
+      summary: Get an opportunity
+      responses:
+        '200':
+          description: Opportunity
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Opportunity'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Opportunities]
+      operationId: updateOpportunity
+      summary: Update an opportunity
+      description: >
+        Updates mutable opportunity fields. Lifecycle state must be changed
+        through the lifecycle transition operation.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpportunityUpdateInput'
+      responses:
+        '200':
+          description: Opportunity updated
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Opportunity'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+
+    delete:
+      tags: [Opportunities]
+      operationId: archiveOpportunity
+      summary: Archive an opportunity
+      description: >
+        Soft-deletes an opportunity by archiving it.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '200':
+          description: Opportunity archived
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Opportunity'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+
+  # ===========================================================================
+  # Lifecycle
+  # ===========================================================================
+
+  /opportunities/{opportunityId}/transition:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+
+    post:
+      tags: [Lifecycle]
+      operationId: transitionOpportunity
+      summary: Transition an opportunity
+      description: >
+        Applies a configured lifecycle transition. The transition and its
+        corresponding system-generated OpportunityEvent are committed
+        atomically.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleTransitionInput'
+      responses:
+        '200':
+          description: Lifecycle transition completed
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleTransitionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/DomainConflict'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+
+  # ===========================================================================
+  # Submission
+  # ===========================================================================
+
+  /opportunities/{opportunityId}/submission:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+
+    get:
+      tags: [Submission]
+      operationId: getSubmission
+      summary: Get the opportunity submission
+      responses:
+        '200':
+          description: Submission, or null if none exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NullableSubmission'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Submission]
+      operationId: submitOpportunity
+      summary: Submit an opportunity
+      description: >
+        Creates the single formal Submission and atomically transitions the
+        Opportunity from DISCOVERED to SUBMITTED while creating the corresponding
+        system-generated OpportunityEvent.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmissionCreateInput'
+      responses:
+        '201':
+          description: Submission created and opportunity submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/DomainConflict'
+
+  # ===========================================================================
+  # Events
+  # ===========================================================================
+
+  /opportunities/{opportunityId}/events:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+
+    get:
+      tags: [Events]
+      operationId: listOpportunityEvents
+      summary: List opportunity events
+      responses:
+        '200':
+          description: Opportunity events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpportunityEventListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Events]
+      operationId: createOpportunityEvent
+      summary: Create an opportunity event
+      description: >
+        Creates a significant historical event. This endpoint is for
+        explicitly recorded events; ordinary CRUD operations do not implicitly
+        create events.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpportunityEventCreateInput'
+      responses:
+        '201':
+          description: Opportunity event created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpportunityEvent'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===========================================================================
+  # Notes
+  # ===========================================================================
+
+  /opportunities/{opportunityId}/notes:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+
+    get:
+      tags: [Notes]
+      operationId: listOpportunityNotes
+      summary: List opportunity notes
+      responses:
+        '200':
+          description: Opportunity notes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpportunityNoteListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Notes]
+      operationId: createOpportunityNote
+      summary: Create an opportunity note
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpportunityNoteCreateInput'
+      responses:
+        '201':
+          description: Note created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpportunityNote'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /opportunities/{opportunityId}/notes/{noteId}:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+      - $ref: '#/components/parameters/NoteId'
+
+    patch:
+      tags: [Notes]
+      operationId: updateOpportunityNote
+      summary: Update an opportunity note
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpportunityNoteUpdateInput'
+      responses:
+        '200':
+          description: Note updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpportunityNote'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Notes]
+      operationId: deleteOpportunityNote
+      summary: Delete an opportunity note
+      responses:
+        '204':
+          description: Note deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===========================================================================
+  # Workspace
+  # ===========================================================================
+
+  /opportunities/{opportunityId}/workspace:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+
+    get:
+      tags: [Workspace]
+      operationId: getOpportunityWorkspace
+      summary: Get the complete opportunity workspace
+      description: >
+        Returns the composed Opportunity Workspace read model, including the
+        opportunity, current state, next action, next scheduled event, notes,
+        events, submission, artefacts, actions, scheduled events, contacts, and
+        communications.
+      responses:
+        '200':
+          description: Opportunity workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpportunityWorkspace'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===========================================================================
+  # User Actions
+  # ===========================================================================
+
+  /opportunities/{opportunityId}/actions:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+
+    get:
+      tags: [User Actions]
+      operationId: listUserActions
+      summary: List user actions
+      responses:
+        '200':
+          description: User actions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserActionListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [User Actions]
+      operationId: createUserAction
+      summary: Create a user action
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserActionCreateInput'
+      responses:
+        '201':
+          description: User action created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAction'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /opportunities/{opportunityId}/actions/{actionId}:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+      - $ref: '#/components/parameters/ActionId'
+
+    get:
+      tags: [User Actions]
+      operationId: getUserAction
+      summary: Get a user action
+      responses:
+        '200':
+          description: User action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAction'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [User Actions]
+      operationId: updateUserAction
+      summary: Update a user action
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserActionUpdateInput'
+      responses:
+        '200':
+          description: User action updated
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAction'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+
+  # ===========================================================================
+  # Scheduled Events
+  # ===========================================================================
+
+  /opportunities/{opportunityId}/scheduled-events:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+
+    get:
+      tags: [Scheduled Events]
+      operationId: listScheduledEvents
+      summary: List scheduled events
+      responses:
+        '200':
+          description: Scheduled events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledEventListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Scheduled Events]
+      operationId: createScheduledEvent
+      summary: Create a scheduled event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduledEventCreateInput'
+      responses:
+        '201':
+          description: Scheduled event created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledEvent'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /opportunities/{opportunityId}/scheduled-events/{scheduledEventId}:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+      - $ref: '#/components/parameters/ScheduledEventId'
+
+    get:
+      tags: [Scheduled Events]
+      operationId: getScheduledEvent
+      summary: Get a scheduled event
+      responses:
+        '200':
+          description: Scheduled event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledEvent'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Scheduled Events]
+      operationId: updateScheduledEvent
+      summary: Update a scheduled event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduledEventUpdateInput'
+      responses:
+        '200':
+          description: Scheduled event updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledEvent'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Scheduled Events]
+      operationId: deleteScheduledEvent
+      summary: Delete a scheduled event
+      responses:
+        '204':
+          description: Scheduled event deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===========================================================================
+  # Scheduled Event / Contact association
+  # ===========================================================================
+
+  /opportunities/{opportunityId}/scheduled-events/{scheduledEventId}/contacts:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+      - $ref: '#/components/parameters/ScheduledEventId'
+
+    get:
+      tags: [Scheduled Events, Contacts]
+      operationId: getScheduledEventContacts
+      summary: List contacts associated with a scheduled event
+      responses:
+        '200':
+          description: Scheduled event contacts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactListResponse'
+
+    post:
+      tags: [Scheduled Events, Contacts]
+      operationId: addScheduledEventContact
+      summary: Associate a contact with a scheduled event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactReferenceInput'
+      responses:
+        '201':
+          description: Contact association created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+
+    delete:
+      tags: [Scheduled Events, Contacts]
+      operationId: removeScheduledEventContact
+      summary: Remove a contact from a scheduled event
+      parameters:
+        - $ref: '#/components/parameters/ContactId'
+      responses:
+        '204':
+          description: Contact association removed
+
+  # ===========================================================================
+  # Contacts
+  # ===========================================================================
+
+  /contacts:
+    get:
+      tags: [Contacts]
+      operationId: listContacts
+      summary: List owner contacts
+      responses:
+        '200':
+          description: Owner contacts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Contacts]
+      operationId: createContact
+      summary: Create a contact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactCreateInput'
+      responses:
+        '201':
+          description: Contact created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /contacts/{contactId}:
+    parameters:
+      - $ref: '#/components/parameters/ContactId'
+
+    get:
+      tags: [Contacts]
+      operationId: getContact
+      summary: Get a contact
+      responses:
+        '200':
+          description: Contact
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Contacts]
+      operationId: updateContact
+      summary: Update a contact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactUpdateInput'
+      responses:
+        '200':
+          description: Contact updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===========================================================================
+  # Opportunity / Contact association
+  # ===========================================================================
+
+  /opportunities/{opportunityId}/contacts:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+
+    get:
+      tags: [Contacts]
+      operationId: getOpportunityContacts
+      summary: List contacts associated with an opportunity
+      responses:
+        '200':
+          description: Opportunity contacts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /opportunities/{opportunityId}/contacts/{contactId}:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+      - $ref: '#/components/parameters/ContactId'
+
+    post:
+      tags: [Contacts]
+      operationId: addOpportunityContact
+      summary: Associate a contact with an opportunity
+      responses:
+        '204':
+          description: Contact associated with opportunity
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/DomainConflict'
+
+    delete:
+      tags: [Contacts]
+      operationId: removeOpportunityContact
+      summary: Remove a contact from an opportunity
+      responses:
+        '204':
+          description: Contact association removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===========================================================================
+  # Communications
+  # ===========================================================================
+
+  /opportunities/{opportunityId}/communications:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+
+    get:
+      tags: [Communications]
+      operationId: listCommunications
+      summary: List communications
+      responses:
+        '200':
+          description: Opportunity communications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommunicationListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Communications]
+      operationId: createCommunication
+      summary: Create a communication
+      description: >
+        The contact and subject are free-form text fields. Body content is
+        optional. A communication has no direction field.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommunicationCreateInput'
+      responses:
+        '201':
+          description: Communication created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Communication'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /opportunities/{opportunityId}/communications/{communicationId}:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+      - $ref: '#/components/parameters/CommunicationId'
+
+    get:
+      tags: [Communications]
+      operationId: getCommunication
+      summary: Get a communication
+      responses:
+        '200':
+          description: Communication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Communication'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Communications]
+      operationId: updateCommunication
+      summary: Update a communication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommunicationUpdateInput'
+      responses:
+        '200':
+          description: Communication updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Communication'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===========================================================================
+  # Communication / Artefact association
+  # ===========================================================================
+
+  /opportunities/{opportunityId}/communications/{communicationId}/artefacts:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+      - $ref: '#/components/parameters/CommunicationId'
+
+    post:
+      tags: [Communications, Artefacts]
+      operationId: addCommunicationArtefact
+      summary: Associate an artefact with a communication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtefactReferenceInput'
+      responses:
+        '204':
+          description: Artefact association created
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===========================================================================
+  # Artefacts
+  # ===========================================================================
+
+  /artefacts:
+    get:
+      tags: [Artefacts]
+      operationId: listArtefacts
+      summary: List owner artefacts
+      parameters:
+        - $ref: '#/components/parameters/ArtefactType'
+        - $ref: '#/components/parameters/IncludeArchived'
+      responses:
+        '200':
+          description: Owner artefacts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtefactListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Artefacts]
+      operationId: createArtefact
+      summary: Create an artefact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtefactCreateInput'
+      responses:
+        '201':
+          description: Artefact created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Artefact'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /artefacts/{artefactId}:
+    parameters:
+      - $ref: '#/components/parameters/ArtefactId'
+
+    get:
+      tags: [Artefacts]
+      operationId: getArtefact
+      summary: Get an artefact
+      responses:
+        '200':
+          description: Artefact
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Artefact'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Artefacts]
+      operationId: archiveArtefact
+      summary: Archive an artefact
+      description: >
+        Archives the artefact. The underlying artefact is not physically
+        deleted.
+      responses:
+        '204':
+          description: Artefact archived
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===========================================================================
+  # Opportunity / Artefact association
+  # ===========================================================================
+
+  /opportunities/{opportunityId}/artefacts:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+
+    get:
+      tags: [Artefacts]
+      operationId: listOpportunityArtefacts
+      summary: List artefacts associated with an opportunity
+      responses:
+        '200':
+          description: Opportunity artefacts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtefactListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Artefacts]
+      operationId: addOpportunityArtefact
+      summary: Associate an artefact with an opportunity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtefactReferenceInput'
+      responses:
+        '204':
+          description: Artefact associated with opportunity
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /opportunities/{opportunityId}/artefacts/{artefactId}:
+    parameters:
+      - $ref: '#/components/parameters/OpportunityId'
+      - $ref: '#/components/parameters/ArtefactId'
+
+    delete:
+      tags: [Artefacts]
+      operationId: removeOpportunityArtefact
+      summary: Remove an artefact from an opportunity
+      responses:
+        '204':
+          description: Artefact association removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ===========================================================================
+  # Search
+  # ===========================================================================
+
+  /search:
+    get:
+      tags: [Search]
+      operationId: searchOpportunities
+      summary: Search opportunities
+      parameters:
+        - $ref: '#/components/parameters/Search'
+        - $ref: '#/components/parameters/Status'
+        - $ref: '#/components/parameters/Country'
+        - $ref: '#/components/parameters/Location'
+        - $ref: '#/components/parameters/RoleFamilyId'
+        - $ref: '#/components/parameters/Source'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ===========================================================================
+  # Export
+  # ===========================================================================
+
+  /exports:
+    post:
+      tags: [Exports]
+      operationId: createExport
+      summary: Export owner data
+      responses:
+        '200':
+          description: Owner export
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ===========================================================================
+  # Storage
+  # ===========================================================================
+
+  /storage/google-drive/authorize:
+    post:
+      tags: [Storage]
+      operationId: authorizeGoogleDrive
+      summary: Start Google Drive authorization
+      responses:
+        '200':
+          description: Google Drive authorization state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StorageAuthorizationResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+# =============================================================================
+# COMPONENTS
+# =============================================================================
+
+components:
+
+  # ---------------------------------------------------------------------------
+  # Parameters
+  # ---------------------------------------------------------------------------
+
+  parameters:
+
+    OpportunityId:
+      name: opportunityId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    NoteId:
+      name: noteId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    ActionId:
+      name: actionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    ScheduledEventId:
+      name: scheduledEventId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    ContactId:
+      name: contactId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    CommunicationId:
+      name: communicationId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    ArtefactId:
+      name: artefactId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      description: >
+        Optimistic-concurrency version token previously returned in ETag.
+      schema:
+        type: string
+        minLength: 1
+
+    Status:
+      name: status
+      in: query
+      schema:
+        $ref: '#/components/schemas/LifecycleStateKey'
+
+    Search:
+      name: q
+      in: query
+      schema:
+        type: string
+        maxLength: 200
+
+    Country:
+      name: country
+      in: query
+      schema:
+        type: string
+        maxLength: 100
+
+    Location:
+      name: location
+      in: query
+      schema:
+        type: string
+        maxLength: 200
+
+    RoleFamilyId:
+      name: roleFamilyId
+      in: query
+      schema:
+        type: string
+        format: uuid
+
+    Source:
+      name: source
+      in: query
+      schema:
+        type: string
+        maxLength: 200
+
+    IncludeArchived:
+      name: includeArchived
+      in: query
+      schema:
+        type: boolean
+        default: false
+
+    ArtefactType:
+      name: type
+      in: query
+      schema:
+        $ref: '#/components/schemas/ArtefactType'
+
+  # ---------------------------------------------------------------------------
+  # Headers
+  # ---------------------------------------------------------------------------
+
+  headers:
+
+    ETag:
+      description: Current optimistic-concurrency version.
+      schema:
+        type: string
+
+  # ---------------------------------------------------------------------------
+  # Responses
+  # ---------------------------------------------------------------------------
+
+  responses:
+
+    Unauthorized:
+      description: Authentication required.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: >
+        Resource was not found or is outside the current owner's scope.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    ValidationError:
+      description: Request validation failed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    DomainConflict:
+      description: >
+        The requested operation violates a domain invariant or configured
+        lifecycle rule.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    PreconditionFailed:
+      description: >
+        The supplied If-Match value does not match the current resource
+        version.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConcurrencyError'
+
+  # ---------------------------------------------------------------------------
+  # Schemas
+  # ---------------------------------------------------------------------------
+
+  schemas:
+
+    # =========================================================================
+    # Common
+    # =========================================================================
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    ConcurrencyError:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            currentVersion:
+              type: integer
+              minimum: 1
+
+    # =========================================================================
+    # Lifecycle
+    # =========================================================================
+
+    LifecycleStateKey:
+      type: string
+      enum:
+        - DISCOVERED
+        - SUBMITTED
+        - IN_PROGRESS
+        - OFFER
+        - CLOSED
+        - CANCELLED
+        - REJECTED
+
+    LifecycleStatus:
+      type: object
+      required:
+        - id
+        - key
+        - label
+        - sortOrder
+        - isTerminal
+        - isActive
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          $ref: '#/components/schemas/LifecycleStateKey'
+        label:
+          type: string
+        sortOrder:
+          type: integer
+        isTerminal:
+          type: boolean
+        isActive:
+          type: boolean
+
+    LifecycleTransitionInput:
+      type: object
+      required:
+        - toStatus
+      properties:
+        toStatus:
+          $ref: '#/components/schemas/LifecycleStateKey'
+
+    # =========================================================================
+    # Opportunity
+    # =========================================================================
+
+    Opportunity:
+      type: object
+      required:
+        - id
+        - ownerId
+        - version
+        - createdAt
+        - updatedAt
+        - companyName
+        - positionTitle
+        - discoveredAt
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        ownerId:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        archivedAt:
+          type: string
+          format: date-time
+          nullable: true
+        companyName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        positionTitle:
+          type: string
+          minLength: 1
+          maxLength: 200
+        jobUrl:
+          type: string
+          format: uri
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        country:
+          type: string
+          nullable: true
+        source:
+          type: string
+          nullable: true
+        fitScore:
+          type: integer
+          nullable: true
+        discoveredAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/LifecycleStatus'
+        roleFamily:
+          allOf:
+            - $ref: '#/components/schemas/RoleFamily'
+          nullable: true
+        nextAction:
+          type: string
+          nullable: true
+        nextActionDueAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    OpportunityCreateInput:
+      type: object
+      required:
+        - companyName
+        - positionTitle
+      properties:
+        companyName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        positionTitle:
+          type: string
+          minLength: 1
+          maxLength: 200
+        jobUrl:
+          type: string
+          format: uri
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        country:
+          type: string
+          nullable: true
+        source:
+          type: string
+          nullable: true
+        fitScore:
+          type: integer
+          nullable: true
+        discoveredAt:
+          type: string
+          format: date-time
+          nullable: true
+        roleFamilyId:
+          type: string
+          format: uuid
+          nullable: true
+        nextAction:
+          type: string
+          nullable: true
+        nextActionDueAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    OpportunityUpdateInput:
+      type: object
+      minProperties: 1
+      properties:
+        companyName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        positionTitle:
+          type: string
+          minLength: 1
+          maxLength: 200
+        jobUrl:
+          type: string
+          format: uri
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        country:
+          type: string
+          nullable: true
+        source:
+          type: string
+          nullable: true
+        fitScore:
+          type: integer
+          nullable: true
+        discoveredAt:
+          type: string
+          format: date-time
+        roleFamilyId:
+          type: string
+          format: uuid
+          nullable: true
+        nextAction:
+          type: string
+          nullable: true
+        nextActionDueAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    RoleFamily:
+      type: object
+      required:
+        - id
+        - name
+        - sortOrder
+        - isActive
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+
+    OpportunityListResponse:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Opportunity'
+
+    LifecycleTransitionResult:
+      type: object
+      required:
+        - opportunity
+        - event
+      properties:
+        opportunity:
+          $ref: '#/components/schemas/Opportunity'
+        event:
+          $ref: '#/components/schemas/OpportunityEvent'
+
+    # =========================================================================
+    # Submission
+    # =========================================================================
+
+    Submission:
+      type: object
+      required:
+        - id
+        - opportunityId
+        - submittedAt
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        opportunityId:
+          type: string
+          format: uuid
+        submittedAt:
+          type: string
+          format: date-time
+        method:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        cvArtefactId:
+          type: string
+          format: uuid
+          nullable: true
+        coverLetterArtefactId:
+          type: string
+          format: uuid
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    NullableSubmission:
+      nullable: true
+      oneOf:
+        - $ref: '#/components/schemas/Submission'
+        - type: 'null'
+
+    SubmissionCreateInput:
+      type: object
+      required:
+        - submittedAt
+      properties:
+        submittedAt:
+          type: string
+          format: date-time
+        method:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        cvArtefactId:
+          type: string
+          format: uuid
+          nullable: true
+        coverLetterArtefactId:
+          type: string
+          format: uuid
+          nullable: true
+
+    SubmissionResult:
+      type: object
+      required:
+        - submission
+        - opportunity
+      properties:
+        submission:
+          $ref: '#/components/schemas/Submission'
+        opportunity:
+          $ref: '#/components/schemas/Opportunity'
+
+    # =========================================================================
+    # Opportunity Events
+    # =========================================================================
+
+    OpportunityEventType:
+      type: string
+      enum:
+        - OPPORTUNITY_CREATED
+        - OPPORTUNITY_SUBMITTED
+        - OPPORTUNITY_IN_PROGRESS
+        - OFFER_RECEIVED
+        - OPPORTUNITY_CLOSED
+        - OPPORTUNITY_CANCELLED
+        - OPPORTUNITY_REJECTED
+        - INTERVIEW_SCHEDULED
+        - INTERVIEW_COMPLETED
+        - DOCUMENT_REQUESTED
+        - TRANSCRIPT_REQUESTED
+        - DIPLOMA_REQUESTED
+        - CERTIFICATE_REQUESTED
+        - LANGUAGE_PROOF_REQUESTED
+        - CHALLENGE_RECEIVED
+        - CHALLENGE_SUBMITTED
+        - COMMUNICATION
+        - CUSTOM
+
+    OpportunityEvent:
+      type: object
+      required:
+        - id
+        - opportunityId
+        - occurredAt
+        - type
+        - title
+        - systemGenerated
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        opportunityId:
+          type: string
+          format: uuid
+        occurredAt:
+          type: string
+          format: date-time
+        type:
+          $ref: '#/components/schemas/OpportunityEventType'
+        title:
+          type: string
+        descriptionMarkdown:
+          type: string
+          nullable: true
+        systemGenerated:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        artefactIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    OpportunityEventCreateInput:
+      type: object
+      required:
+        - occurredAt
+        - type
+        - title
+      properties:
+        occurredAt:
+          type: string
+          format: date-time
+        type:
+          $ref: '#/components/schemas/OpportunityEventType'
+        title:
+          type: string
+          minLength: 1
+        descriptionMarkdown:
+          type: string
+          nullable: true
+        artefactIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    OpportunityEventListResponse:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpportunityEvent'
+
+    # =========================================================================
+    # Notes
+    # =========================================================================
+
+    OpportunityNote:
+      type: object
+      required:
+        - id
+        - opportunityId
+        - bodyMarkdown
+      properties:
+        id:
+          type: string
+          format: uuid
+        opportunityId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          nullable: true
+        bodyMarkdown:
+          type: string
+
+    OpportunityNoteCreateInput:
+      type: object
+      required:
+        - bodyMarkdown
+      properties:
+        title:
+          type: string
+          nullable: true
+        bodyMarkdown:
+          type: string
+          minLength: 1
+
+    OpportunityNoteUpdateInput:
+      type: object
+      minProperties: 1
+      properties:
+        title:
+          type: string
+          nullable: true
+        bodyMarkdown:
+          type: string
+          minLength: 1
+
+    OpportunityNoteListResponse:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpportunityNote'
+
+    # =========================================================================
+    # Workspace
+    # =========================================================================
+
+    OpportunityWorkspace:
+      type: object
+      required:
+        - opportunity
+        - currentState
+        - nextAction
+        - nextActionDueAt
+        - nextScheduledEvent
+        - notes
+        - events
+        - submission
+        - artefacts
+        - actions
+        - scheduledEvents
+        - contacts
+        - communications
+      properties:
+        opportunity:
+          $ref: '#/components/schemas/Opportunity'
+        currentState:
+          $ref: '#/components/schemas/LifecycleStatus'
+        nextAction:
+          type: string
+          nullable: true
+        nextActionDueAt:
+          type: string
+          format: date-time
+          nullable: true
+        nextScheduledEvent:
+          allOf:
+            - $ref: '#/components/schemas/ScheduledEvent'
+          nullable: true
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpportunityNote'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpportunityEvent'
+        submission:
+          allOf:
+            - $ref: '#/components/schemas/Submission'
+          nullable: true
+        artefacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Artefact'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserAction'
+        scheduledEvents:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduledEvent'
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contact'
+        communications:
+          type: array
+          items:
+            $ref: '#/components/schemas/Communication'
+
+    # =========================================================================
+    # User Actions
+    # =========================================================================
+
+    UserActionStatus:
+      type: string
+      enum:
+        - TODO
+        - IN_PROGRESS
+        - COMPLETED
+        - CANCELLED
+
+    UserActionPriority:
+      type: string
+      enum:
+        - LOW
+        - NORMAL
+        - HIGH
+
+    UserAction:
+      type: object
+      required:
+        - id
+        - opportunityId
+        - title
+        - status
+        - priority
+        - version
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        opportunityId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        descriptionMarkdown:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/UserActionStatus'
+        priority:
+          $ref: '#/components/schemas/UserActionPriority'
+        dueAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UserActionCreateInput:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          minLength: 1
+        descriptionMarkdown:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/UserActionStatus'
+        priority:
+          $ref: '#/components/schemas/UserActionPriority'
+        dueAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    UserActionUpdateInput:
+      type: object
+      minProperties: 1
+      properties:
+        title:
+          type: string
+          minLength: 1
+        descriptionMarkdown:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/UserActionStatus'
+        priority:
+          $ref: '#/components/schemas/UserActionPriority'
+        dueAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    UserActionListResponse:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserAction'
+
+    # =========================================================================
+    # Scheduled Events
+    # =========================================================================
+
+    ScheduledEventType:
+      type: string
+      enum:
+        - INTERVIEW
+        - RECRUITER_CALL
+        - PRESENTATION
+        - CHALLENGE_DEADLINE
+        - FOLLOW_UP
+        - OTHER
+
+    ScheduledEvent:
+      type: object
+      required:
+        - id
+        - opportunityId
+        - type
+        - title
+        - scheduledAt
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        opportunityId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/ScheduledEventType'
+        title:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+          nullable: true
+        timeZone:
+          type: string
+          nullable: true
+        platform:
+          type: string
+          nullable: true
+        meetingUrl:
+          type: string
+          format: uri
+          nullable: true
+        notesMarkdown:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ScheduledEventCreateInput:
+      type: object
+      required:
+        - type
+        - title
+        - scheduledAt
+      properties:
+        type:
+          $ref: '#/components/schemas/ScheduledEventType'
+        title:
+          type: string
+          minLength: 1
+        scheduledAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+          nullable: true
+        timeZone:
+          type: string
+          nullable: true
+        platform:
+          type: string
+          nullable: true
+        meetingUrl:
+          type: string
+          format: uri
+          nullable: true
+        notesMarkdown:
+          type: string
+          nullable: true
+
+    ScheduledEventUpdateInput:
+      type: object
+      minProperties: 1
+      properties:
+        type:
+          $ref: '#/components/schemas/ScheduledEventType'
+        title:
+          type: string
+          minLength: 1
+        scheduledAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+          nullable: true
+        timeZone:
+          type: string
+          nullable: true
+        platform:
+          type: string
+          nullable: true
+        meetingUrl:
+          type: string
+          format: uri
+          nullable: true
+        notesMarkdown:
+          type: string
+          nullable: true
+
+    ScheduledEventListResponse:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduledEvent'
+
+    # =========================================================================
+    # Contacts
+    # =========================================================================
+
+    ContactRoleType:
+      type: string
+      enum:
+        - RECRUITER
+        - HIRING_MANAGER
+        - INTERVIEWER
+        - REFERRAL
+        - HR
+        - OTHER
+
+    Contact:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        roleType:
+          $ref: '#/components/schemas/ContactRoleType'
+        organization:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        profileUrl:
+          type: string
+          format: uri
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ContactCreateInput:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+        roleType:
+          $ref: '#/components/schemas/ContactRoleType'
+        organization:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        profileUrl:
+          type: string
+          format: uri
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+    ContactUpdateInput:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+        roleType:
+          $ref: '#/components/schemas/ContactRoleType'
+        organization:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        profileUrl:
+          type: string
+          format: uri
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+    ContactReferenceInput:
+      type: object
+      required:
+        - contactId
+      properties:
+        contactId:
+          type: string
+          format: uuid
+
+    ContactListResponse:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contact'
+
+    # =========================================================================
+    # Communications
+    # =========================================================================
+
+    Communication:
+      type: object
+      required:
+        - id
+        - opportunityId
+        - occurredAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        opportunityId:
+          type: string
+          format: uuid
+        occurredAt:
+          type: string
+          format: date-time
+        contact:
+          type: string
+          nullable: true
+        subject:
+          type: string
+          nullable: true
+        bodyMarkdown:
+          type: string
+          nullable: true
+
+    CommunicationCreateInput:
+      type: object
+      required:
+        - occurredAt
+      properties:
+        occurredAt:
+          type: string
+          format: date-time
+        contact:
+          type: string
+          nullable: true
+        subject:
+          type: string
+          nullable: true
+        bodyMarkdown:
+          type: string
+          nullable: true
+
+    CommunicationUpdateInput:
+      type: object
+      minProperties: 1
+      properties:
+        occurredAt:
+          type: string
+          format: date-time
+        contact:
+          type: string
+          nullable: true
+        subject:
+          type: string
+          nullable: true
+        bodyMarkdown:
+          type: string
+          nullable: true
+
+    CommunicationListResponse:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Communication'
+
+    # =========================================================================
+    # Artefacts
+    # =========================================================================
+
+    ArtefactType:
+      type: string
+      enum:
+        - CV
+        - COVER_LETTER
+        - JOB_DESCRIPTION
+        - COMPANY_RESEARCH
+        - PRESENTATION
+        - PORTFOLIO_EVIDENCE
+        - TRANSCRIPT
+        - CERTIFICATE
+        - AUDIO
+        - VIDEO
+        - OTHER
+
+    StorageProvider:
+      type: string
+      enum:
+        - GOOGLE_DRIVE
+        - EXTERNAL
+
+    Artefact:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/ArtefactType'
+        description:
+          type: string
+          nullable: true
+        contentMarkdown:
+          type: string
+          nullable: true
+        externalUrl:
+          type: string
+          format: uri
+          nullable: true
+        storageProvider:
+          $ref: '#/components/schemas/StorageProvider'
+        storageReference:
+          type: string
+          nullable: true
+        mimeType:
+          type: string
+          nullable: true
+        archivedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    ArtefactCreateInput:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+          minLength: 1
+        type:
+          $ref: '#/components/schemas/ArtefactType'
+        description:
+          type: string
+          nullable: true
+        contentMarkdown:
+          type: string
+          nullable: true
+        externalUrl:
+          type: string
+          format: uri
+          nullable: true
+        storageProvider:
+          $ref: '#/components/schemas/StorageProvider'
+        storageReference:
+          type: string
+          nullable: true
+        mimeType:
+          type: string
+          nullable: true
+
+    ArtefactReferenceInput:
+      type: object
+      required:
+        - artefactId
+      properties:
+        artefactId:
+          type: string
+          format: uuid
+
+    ArtefactListResponse:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Artefact'
+
+    # =========================================================================
+    # Search
+    # =========================================================================
+
+    SearchResult:
+      type: object
+      required:
+        - opportunity
+      properties:
+        opportunity:
+          $ref: '#/components/schemas/Opportunity'
+        score:
+          type: number
+        matchedFields:
+          type: array
+          items:
+            type: string
+
+    SearchResponse:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResult'
+
+    # =========================================================================
+    # Storage
+    # =========================================================================
+
+    StorageAuthorizationResult:
+      type: object
+      required:
+        - authorized
+      properties:
+        authorized:
+          type: boolean
+        authorizationUrl:
+          type: string
+          format: uri
+          nullable: true

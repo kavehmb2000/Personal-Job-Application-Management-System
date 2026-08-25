@@ -32,6 +32,15 @@ export default defineConfig({
           setupFiles: ["./tests/setup.ts"],
         },
       },
+      {
+        extends: true,
+        test: {
+          name: "contract",
+          include: ["tests/contract/**/*.contract.test.ts"],
+          environment: "node",
+          setupFiles: ["./tests/setup.ts"],
+        },
+      },
     ],
     coverage: {
       provider: "v8",
