@@ -11,6 +11,10 @@ export class OpportunityService {
     return this.repository.create(ownerId, input);
   }
 
+  async list(ownerId: string) {
+    return this.repository.list(ownerId);
+  }
+
   async update(
     ownerId: string,
     opportunityId: string,

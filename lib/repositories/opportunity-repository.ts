@@ -72,6 +72,18 @@ export class OpportunityRepository {
     });
   }
 
+  async list(ownerId: string) {
+    return prisma.opportunity.findMany({
+      where: opportunityOwnerWhere(ownerId),
+      include: {
+        status: true,
+      },
+      orderBy: {
+        discoveredAt: "desc",
+      },
+    });
+  }
+
   async getById(ownerId: string, opportunityId: string) {
     return prisma.opportunity.findFirst({
       where: {
