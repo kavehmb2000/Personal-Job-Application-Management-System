@@ -168,9 +168,9 @@
 
 ### Tests
 
-- [ ] T067 [P] Reconcile the OpenAPI contract with Opportunity-centric resources, lifecycle transitions, Submission, OpportunityEvent, OpportunityNote, Artefact, UserAction, ScheduledEvent, Contact, Communication, search, export, and storage operations in `specs/001-job-application-management/contracts/`
-- [ ] T068 [P] Add contract tests for Opportunity CRUD, lifecycle transitions, Submission uniqueness, optimistic concurrency, notes, and events in `tests/contract/opportunities.contract.test.ts`
-- [ ] T069 [P] Add contract tests for Artefacts, UserActions, ScheduledEvents, Contacts, Communications, and Workspace retrieval in `tests/contract/opportunity-context.contract.test.ts`
+- [x] T067 [P] Reconcile the OpenAPI contract with Opportunity-centric resources, lifecycle transitions, Submission, OpportunityEvent, OpportunityNote, Artefact, UserAction, ScheduledEvent, Contact, Communication, search, export, and storage operations in `specs/001-job-application-management/contracts/`
+- [x] T068 [P] Add contract tests for Opportunity CRUD, lifecycle transitions, Submission uniqueness, optimistic concurrency, notes, and events in `tests/contract/opportunities.contract.test.ts`
+- [x] T069 [P] Add contract tests for Artefacts, UserActions, ScheduledEvents, Contacts, Communications, and Workspace retrieval in `tests/contract/opportunity-context.contract.test.ts`
 
 ### Implementation
 
