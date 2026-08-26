@@ -178,7 +178,7 @@
 - [x] T071 Implement `GET`/`POST /api/opportunities` in `app/api/opportunities/route.ts`
 - [x] T072 Implement `GET`/`PATCH`/`DELETE /api/opportunities/[opportunityId]` with owner scoping and optimistic-concurrency handling in `app/api/opportunities/[opportunityId]/route.ts`
 - [x] T073 Implement `POST /api/opportunities/[opportunityId]/transition` using the lifecycle service in `app/api/opportunities/[opportunityId]/transition/route.ts`
-- [ ] T074 Implement `POST /api/opportunities/[opportunityId]/submission` with zero-or-one enforcement and appropriate conflict responses
+- [x] T074 Implement `POST /api/opportunities/[opportunityId]/submission` with zero-or-one enforcement and appropriate conflict responses
 - [ ] T075 Implement Opportunity event and note endpoints under `app/api/opportunities/[opportunityId]/`
 - [ ] T076 Implement UserAction, ScheduledEvent, Contact, and Communication endpoints under the appropriate Opportunity-scoped API routes
 - [ ] T077 Implement Artefact creation/retrieval and association endpoints under `app/api/artefacts/` and the relevant Opportunity subroutes

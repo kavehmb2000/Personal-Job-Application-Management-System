@@ -114,7 +114,7 @@ describe("SubmissionService formal submission", () => {
 
     const submittedAt = new Date("2026-08-19T12:00:00.000Z");
 
-    const result = await service.submit(ownerId, opportunityId, {
+    const result = await service.submit(ownerId, opportunityId, 1, {
       submittedAt,
       method: "Company website",
       notes: "Submitted through the careers portal.",
@@ -146,12 +146,12 @@ describe("SubmissionService formal submission", () => {
   it("does not allow a second Submission for the same Opportunity", async () => {
     const service = createService();
 
-    await service.submit(ownerId, opportunityId, {
+    await service.submit(ownerId, opportunityId, 1, {
       submittedAt: new Date(),
     });
 
     await expect(
-      service.submit(ownerId, opportunityId, {
+      service.submit(ownerId, opportunityId, 2, {
         submittedAt: new Date(),
       }),
     ).rejects.toThrow();
@@ -174,7 +174,7 @@ describe("SubmissionService formal submission", () => {
     });
 
     await expect(
-      service.submit(ownerId, opportunityId, {
+      service.submit(ownerId, opportunityId, 1, {
         submittedAt: new Date(),
       }),
     ).rejects.toThrow();
@@ -196,7 +196,7 @@ describe("SubmissionService formal submission", () => {
     const service = createService();
 
     await expect(
-      service.submit(ownerId, opportunityId, {
+      service.submit(ownerId, opportunityId, 1, {
         submittedAt: new Date(),
         simulateEventFailure: true,
       }),
@@ -236,6 +236,7 @@ describe("SubmissionService formal submission", () => {
     const firstSubmission = await submissionService.submit(
       ownerId,
       firstOpportunity.id,
+      1,
       {
         submittedAt: new Date("2026-08-19T10:00:00Z"),
         method: "Company website",
@@ -254,6 +255,7 @@ describe("SubmissionService formal submission", () => {
     const secondSubmission = await submissionService.submit(
       ownerId,
       secondOpportunity.id,
+      1,
       {
         submittedAt: new Date("2026-08-20T10:00:00Z"),
         method: "Company website",
@@ -292,6 +294,7 @@ describe("SubmissionService formal submission", () => {
     const firstSubmission = await submissionService.submit(
       ownerId,
       firstOpportunity.id,
+      1,
       {
         submittedAt: new Date("2026-08-19T10:00:00.000Z"),
         method: "Company website",
@@ -310,8 +313,9 @@ describe("SubmissionService formal submission", () => {
     const secondSubmission = await submissionService.submit(
       ownerId,
       secondOpportunity.id,
+      1,
       {
-        submittedAt: new Date("2026-08-20T10:00:00.000Z"),
+        submittedAt: new Date("2026-08-19T10:00:00.000Z"),
         method: "Company website",
       },
     );
