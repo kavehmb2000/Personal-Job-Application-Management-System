@@ -26,6 +26,7 @@
 // -----------------------------------------------------------------------------
 
 import type { OpportunityLifecycleStatus } from "./opportunity";
+import { ConflictError } from "@/lib/domain/errors";
 
 export const OPPORTUNITY_LIFECYCLE_STATUSES = [
   "DISCOVERED",
@@ -68,7 +69,7 @@ export const TERMINAL_OPPORTUNITY_STATUSES = [
   "REJECTED",
 ] as const satisfies readonly OpportunityLifecycleStatus[];
 
-export class InvalidOpportunityLifecycleTransitionError extends Error {
+export class InvalidOpportunityLifecycleTransitionError extends ConflictError {
   constructor(
     public readonly from: OpportunityLifecycleStatus,
     public readonly to: OpportunityLifecycleStatus,

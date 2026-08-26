@@ -4,6 +4,7 @@
   PrismaClient,
 } from "@prisma/client";
 
+import { ConflictError, NotFoundError } from "@/lib/domain/errors";
 import { InvalidOpportunityLifecycleTransitionError } from "@/lib/domain/opportunity-lifecycle";
 
 type LifecycleTransitionEventInput = {
@@ -52,7 +53,7 @@ export class LifecycleService {
     });
 
     if (!fromStatus) {
-      throw new Error(
+      throw new NotFoundError(
         `Lifecycle status ${from} was not found for owner ${ownerId}`,
       );
     }
@@ -66,7 +67,7 @@ export class LifecycleService {
     });
 
     if (!toStatus) {
-      throw new Error(
+      throw new NotFoundError(
         `Lifecycle status ${to} was not found for owner ${ownerId}`,
       );
     }
@@ -94,6 +95,7 @@ export class LifecycleService {
     opportunityId: string,
     to: LifecycleStateKey,
     event: LifecycleTransitionEventInput = {},
+    expectedVersion?: number,
   ) {
     return this.prisma.$transaction(async (tx) => {
       const opportunity = await tx.opportunity.findFirst({
@@ -107,8 +109,21 @@ export class LifecycleService {
       });
 
       if (!opportunity) {
-        throw new Error(
+        throw new NotFoundError(
           `Opportunity ${opportunityId} was not found in owner scope`,
+        );
+      }
+
+      if (
+        expectedVersion !== undefined &&
+        opportunity.version !== expectedVersion
+      ) {
+        throw new ConflictError(
+          `Opportunity ${opportunityId} has changed since version ${expectedVersion}`,
+          {
+            expectedVersion,
+            actualVersion: opportunity.version,
+          },
         );
       }
 
@@ -131,14 +146,14 @@ export class LifecycleService {
       });
 
       if (!fromStatus) {
-        throw new Error(
+        throw new NotFoundError(
           `Lifecycle status ${from} was not found for owner ${ownerId}`,
         );
       }
 
       if (!toStatus) {
-        throw new Error(
-          `Lifecycle status ${to} was not found for owner ${ownerId}`,
+        throw new ConflictError(
+          `Invalid lifecycle target ${to} for Opportunity ${opportunityId}`,
         );
       }
 
@@ -186,7 +201,7 @@ export class LifecycleService {
       });
 
       if (updateResult.count !== 1) {
-        throw new Error(
+        throw new ConflictError(
           `Opportunity ${opportunityId} changed before lifecycle transition could be committed`,
         );
       }
