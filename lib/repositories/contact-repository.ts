@@ -4,6 +4,7 @@ import type {
   CreateContactInput,
   UpdateContactInput,
 } from "@/lib/services/contact-service";
+import { NotFoundError } from "@/lib/domain/errors";
 
 export class ContactRepository {
   constructor(private readonly db: PrismaClient) {}
@@ -110,13 +111,15 @@ export class ContactRepository {
     ]);
 
     if (!opportunity) {
-      throw new Error(
+      throw new NotFoundError(
         `Opportunity ${opportunityId} was not found in owner scope`,
       );
     }
 
     if (!contact) {
-      throw new Error(`Contact ${contactId} was not found in owner scope`);
+      throw new NotFoundError(
+        `Contact ${contactId} was not found in owner scope`,
+      );
     }
 
     return this.db.opportunityContact.create({

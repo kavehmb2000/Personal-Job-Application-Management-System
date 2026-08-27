@@ -92,14 +92,10 @@ export class CommunicationService {
   }
 
   async delete(
-      ownerId: string,
-      opportunityId: string,
-      communicationId: string,
+    ownerId: string,
+    opportunityId: string,
+    communicationId: string,
   ) {
-    return this.repository.delete(
-        ownerId,
-        opportunityId,
-        communicationId,
-    );
+    return this.repository.delete(ownerId, opportunityId, communicationId);
   }
 }

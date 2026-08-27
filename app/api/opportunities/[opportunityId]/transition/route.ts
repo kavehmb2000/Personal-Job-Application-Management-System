@@ -10,7 +10,7 @@ import {
 import { prisma } from "@/lib/db";
 import { LifecycleService } from "@/lib/services/lifecycle-service";
 import { validateJsonRequest } from "@/lib/validation/request-validation";
-import {getExpectedVersion} from "@/lib/http/if-match";
+import { getExpectedVersion } from "@/lib/http/if-match";
 
 const opportunityIdSchema = z.string().uuid();
 

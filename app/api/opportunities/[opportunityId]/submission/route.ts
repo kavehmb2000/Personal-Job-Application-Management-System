@@ -11,7 +11,7 @@ import { prisma } from "@/lib/db";
 import { SubmissionRepository } from "@/lib/repositories/submission-repository";
 import { SubmissionService } from "@/lib/services/submission-service";
 import { validateJsonRequest } from "@/lib/validation/request-validation";
-import {getExpectedVersion} from "@/lib/http/if-match";
+import { getExpectedVersion } from "@/lib/http/if-match";
 
 const opportunityIdSchema = z.string().uuid();
 

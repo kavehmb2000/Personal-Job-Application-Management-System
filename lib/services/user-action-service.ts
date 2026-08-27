@@ -8,34 +8,30 @@ export class UserActionService {
   constructor(private readonly repository: UserActionRepository) {}
 
   async create(
-      ownerId: string,
-      opportunityId: string,
-      input: CreateUserActionInput,
+    ownerId: string,
+    opportunityId: string,
+    input: CreateUserActionInput,
   ) {
     return this.repository.create(ownerId, opportunityId, input);
   }
 
-  async getById(
-      ownerId: string,
-      opportunityId: string,
-      actionId: string,
-  ) {
+  async getById(ownerId: string, opportunityId: string, actionId: string) {
     return this.repository.getById(ownerId, opportunityId, actionId);
   }
 
   async update(
-      ownerId: string,
-      opportunityId: string,
-      actionId: string,
-      expectedVersion: number,
-      input: UpdateUserActionInput,
+    ownerId: string,
+    opportunityId: string,
+    actionId: string,
+    expectedVersion: number,
+    input: UpdateUserActionInput,
   ) {
     return this.repository.update(
-        ownerId,
-        opportunityId,
-        actionId,
-        expectedVersion,
-        input,
+      ownerId,
+      opportunityId,
+      actionId,
+      expectedVersion,
+      input,
     );
   }
 
@@ -44,16 +40,16 @@ export class UserActionService {
   }
 
   async delete(
-      ownerId: string,
-      opportunityId: string,
-      actionId: string,
-      expectedVersion: number,
+    ownerId: string,
+    opportunityId: string,
+    actionId: string,
+    expectedVersion: number,
   ) {
     return this.repository.delete(
-        ownerId,
-        opportunityId,
-        actionId,
-        expectedVersion,
+      ownerId,
+      opportunityId,
+      actionId,
+      expectedVersion,
     );
   }
 }
