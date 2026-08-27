@@ -10,6 +10,7 @@ import {
 import { prisma } from "@/lib/db";
 import { LifecycleService } from "@/lib/services/lifecycle-service";
 import { validateJsonRequest } from "@/lib/validation/request-validation";
+import {getExpectedVersion} from "@/lib/http/if-match";
 
 const opportunityIdSchema = z.string().uuid();
 
@@ -65,7 +66,7 @@ export async function POST(request: Request, context: RouteContext) {
     const id = opportunityIdSchema.parse(opportunityId);
 
     const owner = await getOwner();
-    const expectedVersion = parseIfMatch(request);
+    const expectedVersion = getExpectedVersion(request);
 
     const input = await validateJsonRequest(transitionSchema, request);
 

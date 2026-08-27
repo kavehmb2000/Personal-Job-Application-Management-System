@@ -10,6 +10,7 @@ import {
 import { OpportunityRepository } from "@/lib/repositories/opportunity-repository";
 import { OpportunityService } from "@/lib/services/opportunity-service";
 import { validateJsonRequest } from "@/lib/validation/request-validation";
+import {getExpectedVersion} from "@/lib/http/if-match";
 
 const opportunityIdSchema = z.string().uuid();
 
@@ -93,8 +94,8 @@ export async function PATCH(request: Request, context: RouteContext) {
     const { opportunityId } = await context.params;
     const id = opportunityIdSchema.parse(opportunityId);
     const owner = await getOwner();
-
-    const expectedVersion = parseIfMatch(request);
+    
+    const expectedVersion = getExpectedVersion(request);
     const input = await validateJsonRequest(updateOpportunitySchema, request);
 
     const service = new OpportunityService(new OpportunityRepository());
@@ -122,7 +123,7 @@ export async function DELETE(request: Request, context: RouteContext) {
     const id = opportunityIdSchema.parse(opportunityId);
     const owner = await getOwner();
 
-    const expectedVersion = parseIfMatch(request);
+    const expectedVersion = getExpectedVersion(request);
 
     const service = new OpportunityService(new OpportunityRepository());
 

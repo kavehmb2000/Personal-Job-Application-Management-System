@@ -86,4 +86,20 @@ export class CommunicationService {
       communicationId,
     );
   }
+
+  async list(ownerId: string, opportunityId: string) {
+    return this.repository.list(ownerId, opportunityId);
+  }
+
+  async delete(
+      ownerId: string,
+      opportunityId: string,
+      communicationId: string,
+  ) {
+    return this.repository.delete(
+        ownerId,
+        opportunityId,
+        communicationId,
+    );
+  }
 }
