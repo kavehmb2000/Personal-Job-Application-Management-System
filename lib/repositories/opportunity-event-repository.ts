@@ -1,6 +1,7 @@
 ﻿import type { OpportunityEventType } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
+import { ForbiddenError, NotFoundError } from "@/lib/domain/errors";
 import { opportunityOwnerWhere } from "@/lib/repositories/owner-scope";
 
 export type CreateOpportunityEventInput = {
@@ -26,7 +27,7 @@ export class OpportunityEventRepository {
       });
 
       if (!opportunity) {
-        throw new Error(
+        throw new NotFoundError(
           `Opportunity ${opportunityId} was not found in owner scope`,
         );
       }
@@ -34,17 +35,19 @@ export class OpportunityEventRepository {
       const artefactIds = input.artefactIds ?? [];
 
       if (artefactIds.length > 0) {
+        const distinctArtefactIds = [...new Set(artefactIds)];
+
         const artefactCount = await tx.artefact.count({
           where: {
             id: {
-              in: artefactIds,
+              in: distinctArtefactIds,
             },
             ownerId,
           },
         });
 
-        if (artefactCount !== artefactIds.length) {
-          throw new Error(
+        if (artefactCount !== distinctArtefactIds.length) {
+          throw new ForbiddenError(
             "One or more artefacts were not found in owner scope",
           );
         }
