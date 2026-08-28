@@ -6,6 +6,8 @@
 } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
+import { ForbiddenError, NotFoundError } from "@/lib/domain/errors";
+
 export interface CreateArtefactRepositoryInput {
   name: string;
   type: string;
@@ -72,7 +74,7 @@ export class ArtefactRepository {
     });
 
     if (result.count !== 1) {
-      throw new Error(
+      throw new NotFoundError(
         `Artefact ${artefactId} was not found in owner scope or is already archived`,
       );
     }
@@ -85,9 +87,151 @@ export class ArtefactRepository {
     });
 
     if (!artefact) {
-      throw new Error(`Artefact ${artefactId} was not found after archive`);
+      throw new NotFoundError(
+        `Artefact ${artefactId} was not found after archive`,
+      );
+    }
+    return artefact;
+  }
+
+  async list(
+    ownerId: string,
+    options?: {
+      type?: ArtefactType;
+      includeArchived?: boolean;
+    },
+  ): Promise<Artefact[]> {
+    return this.db.artefact.findMany({
+      where: {
+        ownerId,
+        ...(options?.type !== undefined ? { type: options.type } : {}),
+        ...(options?.includeArchived ? {} : { archivedAt: null }),
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  }
+
+  async addToOpportunity(
+    ownerId: string,
+    opportunityId: string,
+    artefactId: string,
+  ) {
+    const opportunity = await this.db.opportunity.findFirst({
+      where: {
+        id: opportunityId,
+        ownerId,
+      },
+      select: { id: true },
+    });
+
+    if (!opportunity) {
+      throw new NotFoundError(
+        "Opportunity could not be found within the owner's scope",
+      );
     }
 
-    return artefact;
+    const artefact = await this.db.artefact.findFirst({
+      where: {
+        id: artefactId,
+        ownerId,
+      },
+      select: { id: true },
+    });
+
+    if (!artefact) {
+      throw new ForbiddenError("Artefact does not belong to the current owner");
+    }
+
+    return this.db.opportunityArtefact.create({
+      data: {
+        opportunityId,
+        artefactId,
+      },
+    });
+  }
+
+  async removeFromOpportunity(
+    ownerId: string,
+    opportunityId: string,
+    artefactId: string,
+  ) {
+    const opportunity = await this.db.opportunity.findFirst({
+      where: {
+        id: opportunityId,
+        ownerId,
+      },
+      select: { id: true },
+    });
+
+    if (!opportunity) {
+      throw new NotFoundError(
+        "Opportunity could not be found within the owner's scope",
+      );
+    }
+
+    const association = await this.db.opportunityArtefact.findFirst({
+      where: {
+        opportunityId,
+        artefactId,
+      },
+      include: {
+        artefact: {
+          select: {
+            ownerId: true,
+          },
+        },
+      },
+    });
+
+    if (!association) {
+      throw new NotFoundError(
+        "OpportunityArtefact association could not be found",
+      );
+    }
+
+    if (association.artefact.ownerId !== ownerId) {
+      throw new ForbiddenError("Artefact does not belong to the current owner");
+    }
+
+    return this.db.opportunityArtefact.delete({
+      where: {
+        id: association.id,
+      },
+    });
+  }
+
+  async getForOpportunity(ownerId: string, opportunityId: string) {
+    const opportunity = await this.db.opportunity.findFirst({
+      where: {
+        id: opportunityId,
+        ownerId,
+      },
+      select: { id: true },
+    });
+
+    if (!opportunity) {
+      throw new NotFoundError(
+        "Opportunity could not be found within the owner's scope",
+      );
+    }
+
+    const links = await this.db.opportunityArtefact.findMany({
+      where: {
+        opportunityId,
+        artefact: {
+          ownerId,
+        },
+      },
+      include: {
+        artefact: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return links.map((link) => link.artefact);
   }
 }
