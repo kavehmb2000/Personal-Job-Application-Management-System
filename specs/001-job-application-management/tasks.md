@@ -190,10 +190,12 @@
 # Phase 9: Kanban, Workspace, Search, and Dashboard
 
 **Purpose**: Build the primary operational UI around derived Opportunity views.
+### Prerequisite
 
+- [ ] T078a - Add authentication entry point 
 ### Tests
 
-- [ ] T078 [P] Add Kanban projection tests for the seven lifecycle states, terminal grouping, dedicated Offer column, accepted-Offer indication, and next scheduled event in `tests/unit/kanban-service.test.ts`
+- [x] T078 [P] Add Kanban projection tests for the seven lifecycle states, terminal grouping, dedicated Offer column, accepted-Offer indication, and next scheduled event in `tests/unit/kanban-service.test.ts`
 - [ ] T079 [P] Add Playwright coverage for Opportunity capture, lifecycle progression, Submission, and historical context in `tests/e2e/opportunity-lifecycle.spec.ts`
 - [ ] T080 [P] Add Playwright coverage for the complete Opportunity Workspace in `tests/e2e/opportunity-workspace.spec.ts`
 - [ ] T081 [P] Add search/filter integration tests for company, position, role family, country/location, lifecycle state, and source in `tests/integration/search-service.test.ts`
@@ -201,9 +203,9 @@
 
 ### Implementation
 
-- [ ] T083 Implement Kanban query/projection in `lib/services/kanban-service.ts`
-- [ ] T084 Implement the concise Kanban board showing position, company, country/location, lifecycle column, and next scheduled event in `components/opportunities/kanban-board.tsx`
-- [ ] T085 Implement accessible equivalent lifecycle movement without relying exclusively on drag-and-drop
+- [x] T083 Implement Kanban query/projection in `lib/services/kanban-service.ts`
+- [x] T084 Implement the concise Kanban board showing position, company, country/location, lifecycle column, and next scheduled event in `components/opportunities/kanban-board.tsx`
+- [x] T085 Implement accessible equivalent lifecycle movement without relying exclusively on drag-and-drop
 - [ ] T086 Implement Opportunity list, create/edit, archive/restore, and lifecycle-transition UI in `app/(authenticated)/opportunities/` and `components/opportunities/`
 - [ ] T087 Implement the responsive Opportunity Workspace in `components/opportunities/workspace/`
 - [ ] T088 Implement the Opportunity detail route in `app/(authenticated)/opportunities/[opportunityId]/page.tsx`

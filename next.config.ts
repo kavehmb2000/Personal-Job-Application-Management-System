@@ -5,6 +5,11 @@ const withSerwist = withSerwistInit({
   swDest: "public/sw.js",
 });
 
-const nextConfig = {};
+const nextConfig = {
+  allowedDevOrigins: ["127.0.0.1"],
+  // existing configuration
+};
+
+module.exports = nextConfig;
 
 export default withSerwist(nextConfig);

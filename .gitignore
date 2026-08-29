@@ -33,3 +33,6 @@ prisma/migration-backup-*/
 
 #JetBrains IDE
 .idea/inspectionProfiles/
+
+#Google cloud info
+*.apps.googleusercontent.com.json

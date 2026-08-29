@@ -169,7 +169,7 @@ describe("OpportunityContextService", () => {
       currentState: opportunity.status,
       nextAction: opportunity.nextAction,
       nextActionDueAt: opportunity.nextActionDueAt,
-      nextScheduledEvent: scheduledEvents[0],
+      nextScheduledEvent: scheduledEvents[1],
       notes,
       events,
       submission,
