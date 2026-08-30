@@ -1,14 +1,18 @@
 ﻿import type { ReactNode } from "react";
-
 import { getCurrentOwner } from "@/lib/auth/current-owner";
-
+import { auth } from "@/lib/auth/auth";
 import { ConnectionStatus } from "@/components/shared/connection-status";
+import { redirect } from "next/navigation";
 
 export default async function AuthenticatedLayout({
   children,
 }: Readonly<{
   children: ReactNode;
 }>) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/auth/signin");
+  }
   await getCurrentOwner();
 
   return (

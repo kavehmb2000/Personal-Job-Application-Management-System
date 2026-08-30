@@ -28,6 +28,13 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       }
 
       const email = user.email?.trim().toLowerCase();
+      console.log("[auth][signIn] Google sign-in attempt", {
+        provider: account?.provider,
+        email: email ? `${email.slice(0, 3)}***@${email.split("@")[1]}` : null,
+        ownerEmailConfigured: Boolean(ownerEmail),
+        emailMatchesOwner: email === ownerEmail,
+        hasGoogleSubject: typeof profile?.sub === "string",
+      });
 
       if (!email || email !== ownerEmail) {
         return false;
@@ -45,13 +52,53 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           email: ownerEmail,
         },
       });
-
+      /*
       if (!existingOwner) {
         await prisma.ownerAccount.create({
           data: {
             email: ownerEmail,
             googleSubject,
             displayName: user.name,
+          },
+        });
+
+        return true;
+      }
+*/
+      if (!existingOwner) {
+        console.log("[auth][signIn] Creating OwnerAccount", {
+          email: ownerEmail,
+          hasGoogleSubject: Boolean(googleSubject),
+        });
+
+        try {
+          const createdOwner = await prisma.ownerAccount.create({
+            data: {
+              email: ownerEmail,
+              googleSubject,
+              displayName: user.name,
+            },
+          });
+
+          console.log("[auth][signIn] OwnerAccount created", {
+            id: createdOwner.id,
+          });
+
+          return true;
+        } catch (error) {
+          console.error("[auth][signIn] OwnerAccount creation failed", error);
+          throw error;
+        }
+      }
+      if (existingOwner.googleSubject === `seed:${ownerEmail}`) {
+        await prisma.ownerAccount.update({
+          where: {
+            id: existingOwner.id,
+          },
+          data: {
+            googleSubject,
+            displayName: user.name ?? existingOwner.displayName,
+            lastSignInAt: new Date(),
           },
         });
 

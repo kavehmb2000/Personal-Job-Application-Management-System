@@ -192,7 +192,7 @@
 **Purpose**: Build the primary operational UI around derived Opportunity views.
 ### Prerequisite
 
-- [ ] T078a - Add authentication entry point 
+- [x] T078a - Add authentication entry point 
 ### Tests
 
 - [x] T078 [P] Add Kanban projection tests for the seven lifecycle states, terminal grouping, dedicated Offer column, accepted-Offer indication, and next scheduled event in `tests/unit/kanban-service.test.ts`

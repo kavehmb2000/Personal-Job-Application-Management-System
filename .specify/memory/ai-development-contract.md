@@ -266,6 +266,24 @@ Tests SHOULD be colocated with the appropriate testing layer:
 
 A feature slice is not complete merely because its individual test passes.
 
+### Test Database Isolation and Cleanup
+
+Tests MUST NOT leave persistent test data in the development database.
+
+Integration and persistence tests MUST use an isolated test database, a dedicated test schema, transactional rollback, or another explicit cleanup mechanism appropriate to the test layer.
+
+Where tests intentionally use the configured development database, every test-created record MUST be reliably removed during test cleanup, including records created indirectly through related aggregates or fixtures.
+
+Test cleanup MUST run even when a test fails.
+
+Before manual application testing, the developer MUST be able to establish that no test-generated data remains in the development database.
+
+A test run MUST therefore leave the development database in the same logical state in which it was found, except for explicitly documented seed/reference data.
+
+Test fixtures MUST NOT use the real configured application owner identity in a way that can interfere with manual authentication or application testing.
+
+If test execution reveals persistent test data in the development database, the issue MUST be treated as a test-infrastructure defect and corrected before continuing normal feature development.
+
 The complete application test suite MUST pass before a phase is declared complete.
 
 ---
@@ -290,6 +308,8 @@ Run targeted tests
 Fix implementation/tests
         ↓
 Run broader test suite
+        ↓
+Verify test database cleanup
         ↓
 Typecheck
         ↓
