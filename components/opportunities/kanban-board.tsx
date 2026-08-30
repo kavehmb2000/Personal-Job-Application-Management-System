@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { OpportunityCreateForm } from "@/components/opportunities/opportunity-create-form";
+
 import {
   KANBAN_COLUMNS,
   type KanbanBoard as KanbanBoardData,
@@ -37,6 +39,7 @@ export function KanbanBoard({ initialBoard }: KanbanBoardProps) {
   const [board, setBoard] = useState(initialBoard);
   const [error, setError] = useState<string | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   async function moveCard(card: KanbanCard, toStatus: KanbanLifecycleState) {
     setError(null);
@@ -116,8 +119,55 @@ export function KanbanBoard({ initialBoard }: KanbanBoardProps) {
     }
   }
 
+  async function handleOpportunityCreated() {
+    setIsCreating(false);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/opportunities/kanban");
+
+      if (!response.ok) {
+        throw new Error(
+          "Opportunity was created, but the board could not be refreshed.",
+        );
+      }
+
+      const nextBoard = (await response.json()) as KanbanBoardData;
+      setBoard(nextBoard);
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Opportunity was created, but the board could not be refreshed.",
+      );
+    }
+  }
+
   return (
     <section aria-label="Opportunity Kanban board">
+      <div className="mb-4 flex justify-end">
+        {!isCreating ? (
+          <button
+            type="button"
+            onClick={() => {
+              setError(null);
+              setIsCreating(true);
+            }}
+          >
+            Add Opportunity
+          </button>
+        ) : null}
+      </div>
+
+      {isCreating ? (
+        <div className="mb-6">
+          <OpportunityCreateForm
+            onCreated={handleOpportunityCreated}
+            onCancel={() => setIsCreating(false)}
+          />
+        </div>
+      ) : null}
+
       {error ? (
         <p role="alert" className="mb-4">
           {error}
