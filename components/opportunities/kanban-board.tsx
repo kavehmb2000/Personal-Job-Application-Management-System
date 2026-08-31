@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState } from "react";
-
+import Link from "next/link";
 import { OpportunityCreateForm } from "@/components/opportunities/opportunity-create-form";
 
 import {
@@ -216,7 +216,9 @@ function KanbanCardView({ card, moving, onMove }: KanbanCardViewProps) {
 
   return (
     <article>
-      <h3>{card.positionTitle}</h3>
+      <h3>
+        <Link href={`/opportunities/${card.id}`}>{card.positionTitle}</Link>
+      </h3>
 
       <p>{card.companyName}</p>
 

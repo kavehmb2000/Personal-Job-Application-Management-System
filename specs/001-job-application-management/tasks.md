@@ -207,8 +207,8 @@
 - [x] T084 Implement the concise Kanban board showing position, company, country/location, lifecycle column, and next scheduled event in `components/opportunities/kanban-board.tsx`
 - [x] T085 Implement accessible equivalent lifecycle movement without relying exclusively on drag-and-drop
 - [ ] T086 Implement Opportunity list, create/edit, archive/restore, and lifecycle-transition UI in `app/(authenticated)/opportunities/` and `components/opportunities/`
-- [ ] T087 Implement the responsive Opportunity Workspace in `components/opportunities/workspace/`
-- [ ] T088 Implement the Opportunity detail route in `app/(authenticated)/opportunities/[opportunityId]/page.tsx`
+- [x] T087 Implement the responsive Opportunity Workspace in `components/opportunities/opportunity-workspace.tsx`
+- [x] T088 Implement the Opportunity detail route in `app/(authenticated)/opportunities/[opportunityId]/page.tsx`
 - [ ] T089 Implement PostgreSQL-native search and the required core filters in `lib/services/search-service.ts` and `app/api/search/route.ts`
 - [ ] T090 Implement the operational dashboard projection and UI in `lib/services/dashboard-service.ts` and `app/(authenticated)/dashboard/page.tsx`
 
