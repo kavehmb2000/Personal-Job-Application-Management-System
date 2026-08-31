@@ -1,5 +1,6 @@
 ﻿import { NextResponse } from "next/server";
 import { z } from "zod";
+import type { LifecycleStateKey } from "@prisma/client";
 
 import { CurrentOwnerError, getCurrentOwner } from "@/lib/auth/current-owner";
 import { UnauthorizedError, errorToResponse } from "@/lib/domain/errors";
@@ -23,18 +24,45 @@ const createOpportunitySchema = z.object({
 
 const opportunityService = new OpportunityService(new OpportunityRepository());
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const owner = await getCurrentOwner();
-    const opportunities = await opportunityService.list(owner.id);
+    const repository = new OpportunityRepository();
+    const service = new OpportunityService(repository);
+
+    const { searchParams } = new URL(request.url);
+
+    const search = searchParams.get("search")?.trim() || undefined;
+    const roleFamilyId = searchParams.get("roleFamilyId")?.trim() || undefined;
+    const country = searchParams.get("country")?.trim() || undefined;
+    const location = searchParams.get("location")?.trim() || undefined;
+    const status = searchParams.get("status")?.trim() || undefined;
+    const source = searchParams.get("source")?.trim() || undefined;
+
+    const opportunities = await service.list(owner.id, {
+      search,
+      roleFamilyId,
+      country,
+      location,
+      status: status as LifecycleStateKey | undefined,
+      source,
+    });
 
     return NextResponse.json(opportunities);
   } catch (error) {
     if (error instanceof CurrentOwnerError) {
-      return errorToResponse(new UnauthorizedError(error.message));
+      return NextResponse.json(
+        {
+          error: {
+            code: "UNAUTHORIZED",
+            message: error.message,
+          },
+        },
+        { status: 401 },
+      );
     }
 
-    return errorToResponse(error);
+    throw error;
   }
 }
 

@@ -1,4 +1,5 @@
 ﻿import type { Prisma, Opportunity } from "@prisma/client";
+import type { LifecycleStateKey } from "@prisma/client";
 import { ConflictError } from "@/lib/domain/errors";
 
 import { prisma } from "@/lib/db";
@@ -73,15 +74,80 @@ export class OpportunityRepository {
     });
   }
 
-  async list(ownerId: string) {
+  async list(
+    ownerId: string,
+    filters?: {
+      search?: string;
+      roleFamilyId?: string;
+      country?: string;
+      location?: string;
+      status?: LifecycleStateKey;
+      source?: string;
+    },
+  ) {
+    const search = filters?.search?.trim();
+
     return prisma.opportunity.findMany({
       where: {
-        ...opportunityOwnerWhere(ownerId),
+        ownerId,
         archivedAt: null,
+
+        ...(search
+          ? {
+              OR: [
+                {
+                  companyName: {
+                    contains: search,
+                    mode: "insensitive",
+                  },
+                },
+                {
+                  positionTitle: {
+                    contains: search,
+                    mode: "insensitive",
+                  },
+                },
+              ],
+            }
+          : {}),
+
+        ...(filters?.roleFamilyId
+          ? {
+              roleFamilyId: filters.roleFamilyId,
+            }
+          : {}),
+
+        ...(filters?.country
+          ? {
+              country: filters.country,
+            }
+          : {}),
+
+        ...(filters?.location
+          ? {
+              location: filters.location,
+            }
+          : {}),
+
+        ...(filters?.status
+          ? {
+              status: {
+                key: filters.status,
+              },
+            }
+          : {}),
+
+        ...(filters?.source
+          ? {
+              source: filters.source,
+            }
+          : {}),
       },
+
       include: {
         status: true,
       },
+
       orderBy: {
         discoveredAt: "desc",
       },

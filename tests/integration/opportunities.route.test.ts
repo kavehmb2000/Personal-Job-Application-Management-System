@@ -176,13 +176,82 @@ describe("Opportunity API routes", () => {
       mocks.getCurrentOwner.mockResolvedValue(owner);
       mocks.list.mockResolvedValue(opportunities);
 
-      const response = await GET();
+      const request = new Request("http://localhost/api/opportunities");
+      const response = await GET(request);
       const body = await response.json();
 
       expect(response.status).toBe(200);
       expect(body).toEqual(opportunities);
       expect(mocks.getCurrentOwner).toHaveBeenCalledOnce();
-      expect(mocks.list).toHaveBeenCalledWith("owner-1");
+      expect(mocks.list).toHaveBeenCalledWith("owner-1", {
+        search: undefined,
+        roleFamilyId: undefined,
+        country: undefined,
+        location: undefined,
+        status: undefined,
+        source: undefined,
+      });
+    });
+
+    it("forwards supported query parameters to the opportunity service", async () => {
+      const owner = {
+        id: "owner-1",
+      };
+
+      const opportunities = [
+        {
+          id: "opportunity-1",
+          ownerId: "owner-1",
+          companyName: "Acme",
+          positionTitle: "Senior Engineer",
+        },
+      ];
+
+      mocks.getCurrentOwner.mockResolvedValue(owner);
+      mocks.list.mockResolvedValue(opportunities);
+
+      const request = new Request(
+        "http://localhost/api/opportunities?search=engine&roleFamilyId=role-1&country=Germany&location=Frankfurt&status=SUBMITTED&source=LinkedIn",
+      );
+
+      const response = await GET(request);
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body).toEqual(opportunities);
+
+      expect(mocks.list).toHaveBeenCalledWith("owner-1", {
+        search: "engine",
+        roleFamilyId: "role-1",
+        country: "Germany",
+        location: "Frankfurt",
+        status: "SUBMITTED",
+        source: "LinkedIn",
+      });
+    });
+
+    it("trims query parameters and treats empty values as undefined", async () => {
+      mocks.getCurrentOwner.mockResolvedValue({
+        id: "owner-1",
+      });
+      mocks.list.mockResolvedValue([]);
+
+      const request = new Request(
+        "http://localhost/api/opportunities?search=%20%20engine%20%20&roleFamilyId=%20&country=%20Germany%20&location=%20&status=%20SUBMITTED%20&source=%20",
+      );
+
+      const response = await GET(request);
+
+      expect(response.status).toBe(200);
+
+      expect(mocks.list).toHaveBeenCalledWith("owner-1", {
+        search: "engine",
+        roleFamilyId: undefined,
+        country: "Germany",
+        location: undefined,
+        status: "SUBMITTED",
+        source: undefined,
+      });
     });
 
     it("returns 401 when there is no authenticated owner", async () => {
@@ -192,7 +261,9 @@ describe("Opportunity API routes", () => {
         new CurrentOwnerError("Authentication is required"),
       );
 
-      const response = await GET();
+      const request = new Request("http://localhost/api/opportunities");
+
+      const response = await GET(request);
       const body = await response.json();
 
       expect(response.status).toBe(401);
