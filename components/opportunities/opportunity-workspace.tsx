@@ -1,5 +1,7 @@
 ﻿import type { OpportunityContext } from "@/lib/domain/opportunity-context";
 
+import { OpportunityManagementControls } from "@/components/opportunities/opportunity-management-controls";
+
 type OpportunityWorkspaceProps = {
   context: OpportunityContext;
 };
@@ -43,6 +45,19 @@ export function OpportunityWorkspace({ context }: OpportunityWorkspaceProps) {
           </p>
         ) : null}
       </header>
+
+      <OpportunityManagementControls
+        opportunity={{
+          id: opportunity.id,
+          version: opportunity.version,
+          companyName: opportunity.companyName,
+          positionTitle: opportunity.positionTitle,
+          jobUrl: opportunity.jobUrl,
+          location: opportunity.location,
+          source: opportunity.source,
+          archivedAt: opportunity.archivedAt,
+        }}
+      />
 
       <section aria-labelledby="opportunity-details-title">
         <h2 id="opportunity-details-title" className="text-xl font-semibold">

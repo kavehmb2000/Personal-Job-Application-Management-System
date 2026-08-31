@@ -75,7 +75,10 @@ export class OpportunityRepository {
 
   async list(ownerId: string) {
     return prisma.opportunity.findMany({
-      where: opportunityOwnerWhere(ownerId),
+      where: {
+        ...opportunityOwnerWhere(ownerId),
+        archivedAt: null,
+      },
       include: {
         status: true,
       },

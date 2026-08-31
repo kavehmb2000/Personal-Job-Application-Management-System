@@ -4,6 +4,8 @@ const mocks = vi.hoisted(() => ({
   getCurrentOwner: vi.fn(),
   create: vi.fn(),
   list: vi.fn(),
+  update: vi.fn(),
+  archive: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/current-owner", () => ({
@@ -20,6 +22,8 @@ vi.mock("@/lib/services/opportunity-service", () => ({
   OpportunityService: class {
     create = mocks.create;
     list = mocks.list;
+    update = mocks.update;
+    archive = mocks.archive;
   },
 }));
 
@@ -28,10 +32,130 @@ vi.mock("@/lib/repositories/opportunity-repository", () => ({
 }));
 
 import { GET, POST } from "@/app/api/opportunities/route";
+import { DELETE, PATCH } from "@/app/api/opportunities/[opportunityId]/route";
 
 describe("Opportunity API routes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe("PATCH /api/opportunities/:opportunityId", () => {
+    const context = {
+      params: Promise.resolve({
+        opportunityId: "550e8400-e29b-41d4-a716-446655440000",
+      }),
+    };
+
+    it("updates an opportunity for the current owner", async () => {
+      const owner = {
+        id: "owner-1",
+      };
+
+      const input = {
+        companyName: "Acme",
+        positionTitle: "Senior Software Engineer",
+        location: "Berlin",
+      };
+
+      const updatedOpportunity = {
+        id: "550e8400-e29b-41d4-a716-446655440000",
+        ownerId: "owner-1",
+        ...input,
+        version: 3,
+      };
+
+      mocks.getCurrentOwner.mockResolvedValue(owner);
+      mocks.update.mockResolvedValue(updatedOpportunity);
+
+      const request = new Request(
+        "http://localhost/api/opportunities/550e8400-e29b-41d4-a716-446655440000",
+        {
+          method: "PATCH",
+          headers: {
+            "content-type": "application/json",
+            "if-match": '"2"',
+          },
+          body: JSON.stringify(input),
+        },
+      );
+
+      const response = await PATCH(request, context);
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body).toEqual(updatedOpportunity);
+      expect(response.headers.get("ETag")).toBe('"3"');
+
+      expect(mocks.getCurrentOwner).toHaveBeenCalledOnce();
+      expect(mocks.update).toHaveBeenCalledWith(
+        "owner-1",
+        "550e8400-e29b-41d4-a716-446655440000",
+        2,
+        input,
+      );
+    });
+
+    it("returns 401 when there is no authenticated owner", async () => {
+      const { CurrentOwnerError } = await import("@/lib/auth/current-owner");
+
+      mocks.getCurrentOwner.mockRejectedValue(
+        new CurrentOwnerError("Authentication is required"),
+      );
+
+      const request = new Request(
+        "http://localhost/api/opportunities/550e8400-e29b-41d4-a716-446655440000",
+        {
+          method: "PATCH",
+          headers: {
+            "content-type": "application/json",
+            "if-match": '"2"',
+          },
+          body: JSON.stringify({
+            companyName: "Acme",
+          }),
+        },
+      );
+
+      const response = await PATCH(request, context);
+      const body = await response.json();
+
+      expect(response.status).toBe(401);
+      expect(body).toEqual({
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Authentication is required",
+        },
+      });
+
+      expect(mocks.update).not.toHaveBeenCalled();
+    });
+
+    it("returns 400 when If-Match is missing", async () => {
+      mocks.getCurrentOwner.mockResolvedValue({
+        id: "owner-1",
+      });
+
+      const request = new Request(
+        "http://localhost/api/opportunities/550e8400-e29b-41d4-a716-446655440000",
+        {
+          method: "PATCH",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            companyName: "Acme",
+          }),
+        },
+      );
+
+      const response = await PATCH(request, context);
+      const body = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(body.error.code).toBe("VALIDATION_ERROR");
+      expect(body.error.message).toBe("If-Match header is required");
+      expect(mocks.update).not.toHaveBeenCalled();
+    });
   });
 
   describe("GET /api/opportunities", () => {
@@ -200,6 +324,95 @@ describe("Opportunity API routes", () => {
       expect(body.error.code).toBe("VALIDATION_ERROR");
       expect(body.error.message).toBe("Request body must contain valid JSON");
       expect(mocks.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("DELETE /api/opportunities/:opportunityId", () => {
+    const context = {
+      params: Promise.resolve({
+        opportunityId: "550e8400-e29b-41d4-a716-446655440000",
+      }),
+    };
+
+    it("archives an opportunity for the current owner", async () => {
+      mocks.getCurrentOwner.mockResolvedValue({
+        id: "owner-1",
+      });
+      mocks.archive.mockResolvedValue(undefined);
+
+      const request = new Request(
+        "http://localhost/api/opportunities/550e8400-e29b-41d4-a716-446655440000",
+        {
+          method: "DELETE",
+          headers: {
+            "if-match": '"2"',
+          },
+        },
+      );
+
+      const response = await DELETE(request, context);
+
+      expect(response.status).toBe(204);
+      expect(await response.text()).toBe("");
+
+      expect(mocks.getCurrentOwner).toHaveBeenCalledOnce();
+      expect(mocks.archive).toHaveBeenCalledWith(
+        "owner-1",
+        "550e8400-e29b-41d4-a716-446655440000",
+        2,
+      );
+    });
+
+    it("returns 401 when there is no authenticated owner", async () => {
+      const { CurrentOwnerError } = await import("@/lib/auth/current-owner");
+
+      mocks.getCurrentOwner.mockRejectedValue(
+        new CurrentOwnerError("Authentication is required"),
+      );
+
+      const request = new Request(
+        "http://localhost/api/opportunities/550e8400-e29b-41d4-a716-446655440000",
+        {
+          method: "DELETE",
+          headers: {
+            "if-match": '"2"',
+          },
+        },
+      );
+
+      const response = await DELETE(request, context);
+      const body = await response.json();
+
+      expect(response.status).toBe(401);
+      expect(body).toEqual({
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Authentication is required",
+        },
+      });
+
+      expect(mocks.archive).not.toHaveBeenCalled();
+    });
+
+    it("returns 400 when If-Match is missing", async () => {
+      mocks.getCurrentOwner.mockResolvedValue({
+        id: "owner-1",
+      });
+
+      const request = new Request(
+        "http://localhost/api/opportunities/550e8400-e29b-41d4-a716-446655440000",
+        {
+          method: "DELETE",
+        },
+      );
+
+      const response = await DELETE(request, context);
+      const body = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(body.error.code).toBe("VALIDATION_ERROR");
+      expect(body.error.message).toBe("If-Match header is required");
+      expect(mocks.archive).not.toHaveBeenCalled();
     });
   });
 });

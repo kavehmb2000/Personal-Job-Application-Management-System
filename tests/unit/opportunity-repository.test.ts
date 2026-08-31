@@ -215,6 +215,45 @@ describe("OpportunityRepository", () => {
     expect(archived.status.key).toBe("DISCOVERED");
   });
 
+  it("does not return archived Opportunities in the owner's list", async () => {
+    const active = await repository.create(ownerA, {
+      companyName: "Active Corporation",
+      positionTitle: "Senior Software Engineer",
+    });
+
+    const archived = await repository.create(ownerA, {
+      companyName: "Archived Corporation",
+      positionTitle: "Principal Software Engineer",
+    });
+
+    await repository.archive(ownerA, archived.id, archived.version);
+
+    const opportunities = await repository.list(ownerA);
+
+    expect(opportunities.map((opportunity) => opportunity.id)).toEqual([
+      active.id,
+    ]);
+  });
+
+  it("can read an archived Opportunity by id", async () => {
+    const created = await repository.create(ownerA, {
+      companyName: "Archived Corporation",
+      positionTitle: "Principal Software Engineer",
+    });
+
+    const archived = await repository.archive(
+      ownerA,
+      created.id,
+      created.version,
+    );
+
+    const found = await repository.getById(ownerA, archived.id);
+
+    expect(found).not.toBeNull();
+    expect(found?.id).toBe(archived.id);
+    expect(found?.archivedAt).not.toBeNull();
+  });
+
   it("does not update an Opportunity outside the owner's scope", async () => {
     const created = await repository.create(ownerA, {
       companyName: "Acme Corporation",

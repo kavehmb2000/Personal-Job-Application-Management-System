@@ -8,7 +8,10 @@ import { opportunityOwnerWhere } from "@/lib/repositories/owner-scope";
 export class KanbanRepository {
   async listForOwner(ownerId: string) {
     return prisma.opportunity.findMany({
-      where: opportunityOwnerWhere(ownerId),
+      where: {
+        ...opportunityOwnerWhere(ownerId),
+        archivedAt: null,
+      },
       select: {
         id: true,
         version: true,
