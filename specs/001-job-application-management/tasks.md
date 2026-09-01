@@ -190,16 +190,18 @@
 # Phase 9: Kanban, Workspace, Search, and Dashboard
 
 **Purpose**: Build the primary operational UI around derived Opportunity views.
+
 ### Prerequisite
 
-- [x] T078a - Add authentication entry point 
+- [x] T078a - Add authentication entry point
+
 ### Tests
 
 - [x] T078 [P] Add Kanban projection tests for the seven lifecycle states, terminal grouping, dedicated Offer column, accepted-Offer indication, and next scheduled event in `tests/unit/kanban-service.test.ts`
-- [ ] T079 [P] Add Playwright coverage for Opportunity capture, lifecycle progression, Submission, and historical context in `tests/e2e/opportunity-lifecycle.spec.ts`
-- [ ] T080 [P] Add Playwright coverage for the complete Opportunity Workspace in `tests/e2e/opportunity-workspace.spec.ts`
+- [ ] T079 [P] Add Playwright coverage for Opportunity capture, lifecycle progression, Submission, and historical context in `tests/e2e/opportunity-lifecycle.spec.ts` — **deferred**
+- [ ] T080 [P] Add Playwright coverage for the complete Opportunity Workspace in `tests/e2e/opportunity-workspace.spec.ts` — **deferred**
 - [x] T081 [P] Add search/filter integration tests for company, position, role family, country/location, lifecycle state, and source in `tests/integration/search-service.test.ts`
-- [ ] T082 [P] Add dashboard projection tests for actionable Opportunities, upcoming ScheduledEvents, overdue UserActions, and Offers in `tests/unit/dashboard-service.test.ts`
+- [x] T082 [P] Add dashboard projection and UI tests for actionable Opportunities, upcoming ScheduledEvents, overdue UserActions, and Offers in `tests/unit/dashboard-service.test.ts` and `tests/unit/dashboard.test.tsx`
 
 ### Implementation
 
@@ -210,9 +212,9 @@
 - [x] T087 Implement the responsive Opportunity Workspace in `components/opportunities/opportunity-workspace.tsx`
 - [x] T088 Implement the Opportunity detail route in `app/(authenticated)/opportunities/[opportunityId]/page.tsx`
 - [x] T089 Implement PostgreSQL-native search and the required core filters in `lib/services/search-service.ts` and `app/api/search/route.ts`
-- [ ] T090 Implement the operational dashboard projection and UI in `lib/services/dashboard-service.ts` and `app/(authenticated)/dashboard/page.tsx`
+- [x] T090 Implement the operational dashboard projection and UI in `lib/services/dashboard-service.ts`, `components/dashboard/dashboard.tsx`, and `app/(authenticated)/dashboard/page.tsx`
 
-**Checkpoint**: The system is operationally usable through the intended Kanban, Workspace, search, and dashboard views.
+**Checkpoint**: Kanban, Workspace, search, and dashboard views are implemented and covered by automated tests. Phase 9 remains open pending the deferred Playwright coverage in T079/T080.
 
 ---
 

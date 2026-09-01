@@ -15,7 +15,7 @@ function run(command: string): number {
   return result.status ?? 1;
 }
 
-let testExitCode = 1;
+let testExitCode = 0;
 
 try {
   console.log("\n=== Resetting test database before test run ===\n");
@@ -27,9 +27,23 @@ try {
     process.exit();
   }
 
+  console.log("\n=== Running unit tests ===\n");
+
+  const unitExitCode = run("npx vitest run --project unit");
+
+  if (unitExitCode !== 0) {
+    testExitCode = unitExitCode;
+  }
+
   console.log("\n=== Running integration tests ===\n");
 
-  testExitCode = run("npx vitest run --project integration --maxWorkers=1");
+  const integrationExitCode = run(
+    "npx vitest run --project integration --maxWorkers=1",
+  );
+
+  if (integrationExitCode !== 0 && testExitCode === 0) {
+    testExitCode = integrationExitCode;
+  }
 } finally {
   console.log("\n=== Resetting test database after test run ===\n");
 
