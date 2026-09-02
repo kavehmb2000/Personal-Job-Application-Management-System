@@ -224,7 +224,7 @@
 
 ### Tests
 
-- [ ] T091 [P] Add fake-StorageProvider integration tests for metadata retrieval, content retrieval, missing references, authorization failures, and provider-independent behavior in `tests/integration/storage-provider.test.ts`
+- [x] T091 [P] Add fake-StorageProvider integration tests for metadata retrieval, content retrieval, missing references, authorization failures, and provider-independent behavior in `tests/integration/storage-provider.test.ts`
 - [ ] T092 [P] Add Google Drive adapter tests for authorization, metadata retrieval, file retrieval, revocation, and failure-safe references in `tests/integration/google-drive-storage.test.ts`
 
 ### Implementation
