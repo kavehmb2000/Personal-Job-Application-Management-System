@@ -225,11 +225,11 @@
 ### Tests
 
 - [x] T091 [P] Add fake-StorageProvider integration tests for metadata retrieval, content retrieval, missing references, authorization failures, and provider-independent behavior in `tests/integration/storage-provider.test.ts`
-- [ ] T092 [P] Add Google Drive adapter tests for authorization, metadata retrieval, file retrieval, revocation, and failure-safe references in `tests/integration/google-drive-storage.test.ts`
+- [x] T092 [P] Add Google Drive adapter tests for authorization, metadata retrieval, file retrieval, revocation, and failure-safe references in `tests/integration/google-drive-storage.test.ts`
 
 ### Implementation
 
-- [ ] T093 Implement the Google Drive `StorageProvider` adapter in `lib/storage/google-drive-storage-provider.ts`
+- [x] T093 Implement the Google Drive `StorageProvider` adapter in `lib/storage/google-drive-storage-provider.ts`
 - [ ] T094 Implement Google Drive authorization/revocation flow and associated audit events in `app/api/storage/google-drive/` and `lib/storage/`
 - [ ] T095 Implement provider-neutral Artefact metadata/content retrieval through `StorageProvider`
 - [ ] T096 Ensure Google Drive identifiers, scopes, and provider-specific concepts remain outside Opportunity and Artefact domain services
