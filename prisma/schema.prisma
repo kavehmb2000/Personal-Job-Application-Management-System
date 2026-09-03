@@ -123,6 +123,24 @@ model OwnerAccount {
   roleFamilies    RoleFamily[]
   contacts        Contact[]
   auditEvents     AuditEvent[]
+
+  googleDriveAuthorization GoogleDriveAuthorization?
+}
+
+model GoogleDriveAuthorization {
+  id           String    @id @default(uuid())
+  ownerId      String    @unique
+  refreshToken String
+
+  authorizedAt DateTime  @default(now())
+  revokedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner OwnerAccount @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, revokedAt])
 }
 
 model AuditEvent {
