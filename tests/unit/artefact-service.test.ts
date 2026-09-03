@@ -1,6 +1,12 @@
 ﻿import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ArtefactService } from "@/lib/services/artefact-service";
+import type { StorageProviderResolver } from "@/lib/storage/storage-provider-resolver";
+import type {
+  StorageFileContent,
+  StorageFileMetadata,
+  StorageProvider,
+} from "@/lib/storage/storage-provider";
 
 describe("ArtefactService", () => {
   const ownerA = "owner-a";
@@ -18,6 +24,24 @@ describe("ArtefactService", () => {
     vi.clearAllMocks();
     service = new ArtefactService(repository as any);
   });
+
+  function createStorageProvider(): StorageProvider {
+    return {
+      provider: "google-drive",
+      getAuthorization: vi.fn(),
+      getMetadata: vi.fn(),
+      download: vi.fn(),
+      createReference: vi.fn(),
+    };
+  }
+
+  function createStorageResolver(
+    provider: StorageProvider,
+  ): StorageProviderResolver {
+    return {
+      resolve: vi.fn(async () => provider),
+    };
+  }
 
   it("creates an Artefact independently of any Opportunity", async () => {
     const created = {
@@ -50,7 +74,6 @@ describe("ArtefactService", () => {
     const result = await service.create(ownerA, input);
 
     expect(repository.create).toHaveBeenCalledWith(ownerA, input);
-
     expect(result).toBe(created);
   });
 
@@ -70,7 +93,6 @@ describe("ArtefactService", () => {
     const result = await service.getById(ownerA, "artefact-1");
 
     expect(repository.getById).toHaveBeenCalledWith(ownerA, "artefact-1");
-
     expect(result).toBe(artefact);
   });
 
@@ -105,7 +127,6 @@ describe("ArtefactService", () => {
     const result = await service.archive(ownerA, "artefact-1");
 
     expect(repository.archive).toHaveBeenCalledWith(ownerA, "artefact-1");
-
     expect(result).toBe(archived);
     expect(result.archivedAt).not.toBeNull();
   });
@@ -141,9 +162,158 @@ describe("ArtefactService", () => {
     await service.archive(ownerB, "artefact-1");
 
     expect(repository.create).toHaveBeenCalledWith(ownerB, expect.any(Object));
-
     expect(repository.getById).toHaveBeenCalledWith(ownerB, "artefact-1");
-
     expect(repository.archive).toHaveBeenCalledWith(ownerB, "artefact-1");
+  });
+
+  it("translates the persisted provider into a provider-neutral storage reference", async () => {
+    const provider = createStorageProvider();
+    const resolver = createStorageResolver(provider);
+
+    const metadata: StorageFileMetadata = {
+      reference: {
+        provider: "google-drive",
+        reference: "drive-file-1",
+      },
+      name: "CV.pdf",
+      mimeType: "application/pdf",
+    };
+
+    vi.mocked(provider.getMetadata).mockResolvedValue(metadata);
+
+    repository.getById.mockResolvedValue({
+      id: "artefact-storage-1",
+      ownerId: ownerA,
+      name: "CV",
+      type: "CV",
+      description: null,
+      contentMarkdown: null,
+      externalUrl: null,
+      storageProvider: "GOOGLE_DRIVE",
+      storageReference: "drive-file-1",
+      mimeType: "application/pdf",
+      archivedAt: null,
+    });
+
+    const serviceWithStorage = new ArtefactService(repository as any, resolver);
+
+    const result = await serviceWithStorage.getStorageMetadata(
+      ownerA,
+      "artefact-storage-1",
+    );
+
+    expect(resolver.resolve).toHaveBeenCalledWith(ownerA, "GOOGLE_DRIVE");
+
+    expect(provider.getMetadata).toHaveBeenCalledWith({
+      provider: "google-drive",
+      reference: "drive-file-1",
+    });
+
+    expect(result).toBe(metadata);
+  });
+
+  it("passes the owner scope to the storage provider resolver", async () => {
+    const provider = createStorageProvider();
+    const resolver = createStorageResolver(provider);
+
+    vi.mocked(provider.getMetadata).mockResolvedValue({
+      reference: {
+        provider: "google-drive",
+        reference: "drive-file-2",
+      },
+      name: "portfolio.pdf",
+    });
+
+    repository.getById.mockResolvedValue({
+      id: "artefact-storage-2",
+      ownerId: ownerB,
+      name: "Portfolio",
+      type: "PORTFOLIO_EVIDENCE",
+      description: null,
+      contentMarkdown: null,
+      externalUrl: null,
+      storageProvider: "GOOGLE_DRIVE",
+      storageReference: "drive-file-2",
+      mimeType: "application/pdf",
+      archivedAt: null,
+    });
+
+    const serviceWithStorage = new ArtefactService(repository as any, resolver);
+
+    await serviceWithStorage.getStorageMetadata(ownerB, "artefact-storage-2");
+
+    expect(resolver.resolve).toHaveBeenCalledWith(ownerB, "GOOGLE_DRIVE");
+  });
+
+  it("does not expose provider-specific credentials or API behavior", async () => {
+    const provider = createStorageProvider();
+    const resolver = createStorageResolver(provider);
+
+    const content: StorageFileContent = {
+      metadata: {
+        reference: {
+          provider: "google-drive",
+          reference: "drive-file-3",
+        },
+        name: "CV.pdf",
+        mimeType: "application/pdf",
+      },
+      content: new Uint8Array([1, 2, 3]),
+    };
+
+    vi.mocked(provider.download).mockResolvedValue(content);
+
+    repository.getById.mockResolvedValue({
+      id: "artefact-storage-3",
+      ownerId: ownerA,
+      name: "CV",
+      type: "CV",
+      description: null,
+      contentMarkdown: null,
+      externalUrl: null,
+      storageProvider: "GOOGLE_DRIVE",
+      storageReference: "drive-file-3",
+      mimeType: "application/pdf",
+      archivedAt: null,
+    });
+
+    const serviceWithStorage = new ArtefactService(repository as any, resolver);
+
+    const result = await serviceWithStorage.download(
+      ownerA,
+      "artefact-storage-3",
+    );
+
+    expect(result).toBe(content);
+    expect(provider.download).toHaveBeenCalledWith({
+      provider: "google-drive",
+      reference: "drive-file-3",
+    });
+  });
+
+  it("rejects an unsupported persisted storage provider", async () => {
+    const provider = createStorageProvider();
+    const resolver = createStorageResolver(provider);
+
+    repository.getById.mockResolvedValue({
+      id: "artefact-storage-4",
+      ownerId: ownerA,
+      name: "Unknown",
+      type: "OTHER",
+      description: null,
+      contentMarkdown: null,
+      externalUrl: null,
+      storageProvider: "DROPBOX",
+      storageReference: "dropbox-file-1",
+      mimeType: null,
+    });
+
+    const serviceWithStorage = new ArtefactService(repository as any, resolver);
+
+    await expect(
+      serviceWithStorage.getStorageMetadata(ownerA, "artefact-storage-4"),
+    ).rejects.toThrow("Unsupported storage provider: DROPBOX");
+
+    expect(resolver.resolve).not.toHaveBeenCalled();
   });
 });
