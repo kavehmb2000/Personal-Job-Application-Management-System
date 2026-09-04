@@ -233,7 +233,7 @@
 - [x] T094 Implement Google Drive authorization/revocation flow and associated audit events in `app/api/storage/google-drive/` and `lib/storage/`
 - [x] T095 Implement provider-neutral Artefact metadata/content retrieval through `StorageProvider`
 - [x] T096 Ensure Google Drive identifiers, scopes, and provider-specific concepts remain outside Opportunity and Artefact domain services
-- [ ] T097 Implement the Artefact library for CVs, cover letters, job descriptions, research, presentations, portfolio evidence, transcripts, certificates, audio, video, and other Artefact types in `app/(authenticated)/artefacts/` and `components/artefacts/`
+- [x] T097 Implement the Artefact library for CVs, cover letters, job descriptions, research, presentations, portfolio evidence, transcripts, certificates, audio, video, and other Artefact types in `app/(authenticated)/artefacts/` and `components/artefacts/`
 
 **Checkpoint**: Google Drive works as the initial storage provider while the domain remains provider-neutral.
 

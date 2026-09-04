@@ -108,7 +108,7 @@ export class ArtefactRepository {
         ...(options?.includeArchived ? {} : { archivedAt: null }),
       },
       orderBy: {
-        createdAt: "desc",
+        name: "asc",
       },
     });
   }
