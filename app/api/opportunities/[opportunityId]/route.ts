@@ -134,3 +134,25 @@ export async function DELETE(request: Request, context: RouteContext) {
     return errorToResponse(error);
   }
 }
+
+export async function POST(request: Request, context: RouteContext) {
+  try {
+    const { opportunityId } = await context.params;
+    const id = opportunityIdSchema.parse(opportunityId);
+    const owner = await getOwner();
+
+    const expectedVersion = getExpectedVersion(request);
+
+    const service = new OpportunityService(new OpportunityRepository());
+
+    const opportunity = await service.restore(owner.id, id, expectedVersion);
+
+    return NextResponse.json(opportunity, {
+      headers: {
+        ETag: `"${opportunity.version}"`,
+      },
+    });
+  } catch (error) {
+    return errorToResponse(error);
+  }
+}

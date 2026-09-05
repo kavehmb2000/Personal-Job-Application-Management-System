@@ -1,4 +1,10 @@
 ﻿import { beforeEach, describe, expect, it, vi } from "vitest";
+import { GET, POST } from "@/app/api/opportunities/route";
+import {
+  DELETE,
+  PATCH,
+  POST as RESTORE,
+} from "@/app/api/opportunities/[opportunityId]/route";
 
 const mocks = vi.hoisted(() => ({
   getCurrentOwner: vi.fn(),
@@ -6,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   list: vi.fn(),
   update: vi.fn(),
   archive: vi.fn(),
+  restore: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/current-owner", () => ({
@@ -24,15 +31,13 @@ vi.mock("@/lib/services/opportunity-service", () => ({
     list = mocks.list;
     update = mocks.update;
     archive = mocks.archive;
+    restore = mocks.restore;
   },
 }));
 
 vi.mock("@/lib/repositories/opportunity-repository", () => ({
   OpportunityRepository: class {},
 }));
-
-import { GET, POST } from "@/app/api/opportunities/route";
-import { DELETE, PATCH } from "@/app/api/opportunities/[opportunityId]/route";
 
 describe("Opportunity API routes", () => {
   beforeEach(() => {
@@ -484,6 +489,72 @@ describe("Opportunity API routes", () => {
       expect(body.error.code).toBe("VALIDATION_ERROR");
       expect(body.error.message).toBe("If-Match header is required");
       expect(mocks.archive).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("POST /api/opportunities/:opportunityId/restore", () => {
+    const context = {
+      params: Promise.resolve({
+        opportunityId: "550e8400-e29b-41d4-a716-446655440000",
+      }),
+    };
+
+    it("restores an opportunity for the current owner", async () => {
+      const restoredOpportunity = {
+        id: "550e8400-e29b-41d4-a716-446655440000",
+        ownerId: "owner-1",
+        archivedAt: null,
+        version: 3,
+      };
+
+      mocks.getCurrentOwner.mockResolvedValue({
+        id: "owner-1",
+      });
+      mocks.restore.mockResolvedValue(restoredOpportunity);
+
+      const request = new Request(
+        "http://localhost/api/opportunities/550e8400-e29b-41d4-a716-446655440000/restore",
+        {
+          method: "POST",
+          headers: {
+            "if-match": '"2"',
+          },
+        },
+      );
+
+      const response = await RESTORE(request, context);
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body).toEqual(restoredOpportunity);
+      expect(response.headers.get("ETag")).toBe('"3"');
+
+      expect(mocks.restore).toHaveBeenCalledWith(
+        "owner-1",
+        "550e8400-e29b-41d4-a716-446655440000",
+        2,
+      );
+    });
+
+    it("returns 400 when If-Match is missing", async () => {
+      mocks.getCurrentOwner.mockResolvedValue({
+        id: "owner-1",
+      });
+
+      const request = new Request(
+        "http://localhost/api/opportunities/550e8400-e29b-41d4-a716-446655440000/restore",
+        {
+          method: "POST",
+        },
+      );
+
+      const response = await RESTORE(request, context);
+      const body = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(body.error.code).toBe("VALIDATION_ERROR");
+      expect(body.error.message).toBe("If-Match header is required");
+      expect(mocks.restore).not.toHaveBeenCalled();
     });
   });
 });

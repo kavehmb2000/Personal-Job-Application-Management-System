@@ -4,6 +4,8 @@
 } from "@/lib/repositories/opportunity-repository";
 import { OpportunityRepository } from "@/lib/repositories/opportunity-repository";
 import type { LifecycleStateKey } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { NotFoundError } from "@/lib/domain/errors";
 
 export class OpportunityService {
   constructor(private readonly repository: OpportunityRepository) {}
@@ -46,5 +48,13 @@ export class OpportunityService {
     expectedVersion: number,
   ) {
     return this.repository.archive(ownerId, opportunityId, expectedVersion);
+  }
+
+  async restore(
+    ownerId: string,
+    opportunityId: string,
+    expectedVersion: number,
+  ) {
+    return this.repository.restore(ownerId, opportunityId, expectedVersion);
   }
 }

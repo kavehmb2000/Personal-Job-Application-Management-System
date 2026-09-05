@@ -94,6 +94,42 @@ export class ArtefactRepository {
     return artefact;
   }
 
+  async restore(ownerId: string, artefactId: string): Promise<Artefact> {
+    const result = await this.db.artefact.updateMany({
+      where: {
+        id: artefactId,
+        ownerId,
+        archivedAt: {
+          not: null,
+        },
+      },
+      data: {
+        archivedAt: null,
+      },
+    });
+
+    if (result.count !== 1) {
+      throw new NotFoundError(
+        `Artefact ${artefactId} was not found in owner scope or is not archived`,
+      );
+    }
+
+    const artefact = await this.db.artefact.findFirst({
+      where: {
+        id: artefactId,
+        ownerId,
+      },
+    });
+
+    if (!artefact) {
+      throw new NotFoundError(
+        `Artefact ${artefactId} was not found after restore`,
+      );
+    }
+
+    return artefact;
+  }
+
   async list(
     ownerId: string,
     options?: {

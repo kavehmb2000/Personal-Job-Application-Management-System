@@ -107,6 +107,10 @@ export class ArtefactService {
     return this.repository.archive(ownerId, artefactId);
   }
 
+  async restore(ownerId: string, artefactId: string) {
+    return this.repository.restore(ownerId, artefactId);
+  }
+
   async list(
     ownerId: string,
     options?: {

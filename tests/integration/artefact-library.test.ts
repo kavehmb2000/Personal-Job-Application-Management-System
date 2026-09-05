@@ -1,4 +1,4 @@
-﻿import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+﻿import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ArtefactType } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
@@ -163,6 +163,7 @@ describe("Artefact library", () => {
       "library-owner@example.com",
       "google-subject-owner",
     );
+
     await createOwner(
       otherOwnerId,
       "other-owner@example.com",
@@ -266,6 +267,188 @@ describe("Artefact library", () => {
     const activeArtefacts = await service.list(ownerId);
 
     expect(activeArtefacts).toHaveLength(0);
+  });
+
+  describe("archive and restore", () => {
+    it("restores an archived artefact and includes it in the active list", async () => {
+      await createOwner(
+        ownerId,
+        "library-owner@example.com",
+        "google-subject-owner",
+      );
+
+      const activeArtefact = await service.create(ownerId, {
+        name: "Active CV",
+        type: ArtefactType.CV,
+        contentMarkdown: "# Active CV",
+      });
+
+      const artefact = await service.create(ownerId, {
+        name: "Restore Test CV",
+        type: ArtefactType.CV,
+        description: "CV used to verify archive and restore",
+        contentMarkdown: "# Restore Test CV\n\nSoftware Engineer",
+      });
+
+      const archived = await service.archive(ownerId, artefact.id);
+
+      expect(archived.id).toBe(artefact.id);
+      expect(archived.archivedAt).not.toBeNull();
+
+      const activeAfterArchive = await service.list(ownerId);
+
+      expect(activeAfterArchive).toHaveLength(1);
+      expect(activeAfterArchive[0].id).toBe(activeArtefact.id);
+
+      const restored = await service.restore(ownerId, artefact.id);
+
+      expect(restored.id).toBe(artefact.id);
+      expect(restored.archivedAt).toBeNull();
+      expect(restored.name).toBe("Restore Test CV");
+      expect(restored.type).toBe(ArtefactType.CV);
+      expect(restored.description).toBe(
+        "CV used to verify archive and restore",
+      );
+      expect(restored.contentMarkdown).toBe(
+        "# Restore Test CV\n\nSoftware Engineer",
+      );
+
+      const activeAfterRestore = await service.list(ownerId);
+
+      expect(activeAfterRestore).toHaveLength(2);
+      expect(activeAfterRestore.some(({ id }) => id === artefact.id)).toBe(
+        true,
+      );
+      expect(
+        activeAfterRestore.some(({ id }) => id === activeArtefact.id),
+      ).toBe(true);
+    });
+
+    it("restores only the targeted artefact", async () => {
+      await createOwner(
+        ownerId,
+        "library-owner@example.com",
+        "google-subject-owner",
+      );
+
+      const first = await service.create(ownerId, {
+        name: "First CV",
+        type: ArtefactType.CV,
+        contentMarkdown: "# First CV",
+      });
+
+      const second = await service.create(ownerId, {
+        name: "Second CV",
+        type: ArtefactType.CV,
+        contentMarkdown: "# Second CV",
+      });
+
+      await service.archive(ownerId, first.id);
+      await service.archive(ownerId, second.id);
+
+      const restored = await service.restore(ownerId, first.id);
+
+      expect(restored.id).toBe(first.id);
+      expect(restored.archivedAt).toBeNull();
+
+      const activeArtefacts = await service.list(ownerId);
+
+      expect(activeArtefacts).toHaveLength(1);
+      expect(activeArtefacts[0].id).toBe(first.id);
+
+      const allArtefacts = await service.list(ownerId, {
+        includeArchived: true,
+      });
+
+      expect(allArtefacts).toHaveLength(2);
+
+      const restoredFromList = allArtefacts.find(({ id }) => id === first.id);
+      const stillArchived = allArtefacts.find(({ id }) => id === second.id);
+
+      expect(restoredFromList?.archivedAt).toBeNull();
+      expect(stillArchived?.archivedAt).not.toBeNull();
+    });
+
+    it("does not allow one owner to restore another owner's artefact", async () => {
+      await createOwner(
+        ownerId,
+        "library-owner@example.com",
+        "google-subject-owner",
+      );
+
+      await createOwner(
+        otherOwnerId,
+        "other-owner@example.com",
+        "google-subject-other-owner",
+      );
+
+      const otherOwnerArtefact = await service.create(otherOwnerId, {
+        name: "Owner B Restore Test CV",
+        type: ArtefactType.CV,
+        contentMarkdown: "# Owner B CV",
+      });
+
+      await service.archive(otherOwnerId, otherOwnerArtefact.id);
+
+      await expect(
+        service.restore(ownerId, otherOwnerArtefact.id),
+      ).rejects.toThrow();
+
+      const ownerArtefacts = await service.list(ownerId, {
+        includeArchived: true,
+      });
+
+      expect(ownerArtefacts).toHaveLength(0);
+
+      const otherOwnerArtefactAfterAttempt = await service.getById(
+        otherOwnerId,
+        otherOwnerArtefact.id,
+      );
+
+      expect(otherOwnerArtefactAfterAttempt).not.toBeNull();
+      expect(otherOwnerArtefactAfterAttempt?.archivedAt).not.toBeNull();
+    });
+
+    it("rejects restoring an artefact that is already active", async () => {
+      await createOwner(
+        ownerId,
+        "library-owner@example.com",
+        "google-subject-owner",
+      );
+
+      const artefact = await service.create(ownerId, {
+        name: "Already Active CV",
+        type: ArtefactType.CV,
+        contentMarkdown: "# Already Active",
+      });
+
+      expect(artefact.archivedAt).toBeNull();
+
+      await expect(service.restore(ownerId, artefact.id)).rejects.toThrow();
+
+      const unchanged = await service.getById(ownerId, artefact.id);
+
+      expect(unchanged).not.toBeNull();
+      expect(unchanged?.archivedAt).toBeNull();
+    });
+
+    it("rejects restoring a nonexistent artefact", async () => {
+      await createOwner(
+        ownerId,
+        "library-owner@example.com",
+        "google-subject-owner",
+      );
+
+      const nonexistentArtefactId = "00000000-0000-0000-0000-000000000099";
+
+      await expect(
+        service.restore(ownerId, nonexistentArtefactId),
+      ).rejects.toThrow();
+
+      const activeArtefacts = await service.list(ownerId);
+
+      expect(activeArtefacts).toHaveLength(0);
+    });
   });
 
   it("creates a storage-backed artefact without exposing provider-specific credentials", async () => {

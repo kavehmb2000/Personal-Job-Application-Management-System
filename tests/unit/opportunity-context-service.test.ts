@@ -1,10 +1,14 @@
-﻿import { describe, expect, it, vi } from "vitest";
+﻿import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { OpportunityContextService } from "@/lib/services/opportunity-context-service";
 
 describe("OpportunityContextService", () => {
   const ownerId = "owner-1";
   const opportunityId = "opportunity-1";
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   const createRepository = (context: unknown) => ({
     getContext: vi.fn().mockResolvedValue(context),
@@ -31,6 +35,9 @@ describe("OpportunityContextService", () => {
   };
 
   it("projects the complete Opportunity Workspace context", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-05T08:00:00.000Z"));
+
     const notes = [
       {
         id: "note-1",

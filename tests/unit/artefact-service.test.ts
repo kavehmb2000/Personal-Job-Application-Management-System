@@ -16,6 +16,7 @@ describe("ArtefactService", () => {
     create: vi.fn(),
     getById: vi.fn(),
     archive: vi.fn(),
+    restore: vi.fn(),
   };
 
   let service: ArtefactService;
@@ -131,8 +132,19 @@ describe("ArtefactService", () => {
     expect(result.archivedAt).not.toBeNull();
   });
 
-  it("does not expose restore behavior", () => {
-    expect("restore" in service).toBe(false);
+  it("restores an artefact", async () => {
+    const restoredArtefact = {
+      id: "artefact-1",
+      ownerA,
+      archivedAt: null,
+    };
+
+    repository.restore = vi.fn().mockResolvedValue(restoredArtefact);
+
+    const result = await service.restore(ownerA, "artefact-1");
+
+    expect(result).toEqual(restoredArtefact);
+    expect(repository.restore).toHaveBeenCalledWith(ownerA, "artefact-1");
   });
 
   it("passes the owner scope to every repository operation", async () => {

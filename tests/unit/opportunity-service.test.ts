@@ -11,6 +11,7 @@ describe("OpportunityService", () => {
     getById: vi.fn(),
     update: vi.fn(),
     archive: vi.fn(),
+    restore: vi.fn(),
   };
 
   let service: OpportunityService;
@@ -148,7 +149,19 @@ describe("OpportunityService", () => {
     expect(repository.archive).toHaveBeenCalledWith(ownerB, "opportunity-1", 2);
   });
 
-  it("does not expose restore behavior", () => {
-    expect("restore" in service).toBe(false);
+  it("restores an opportunity", async () => {
+    const restoredOpportunity = {
+      id: "opportunity-1",
+      ownerA,
+      archivedAt: null,
+      version: 3,
+    };
+
+    repository.restore = vi.fn().mockResolvedValue(restoredOpportunity);
+
+    const result = await service.restore(ownerA, "opportunity-1", 2);
+
+    expect(result).toEqual(restoredOpportunity);
+    expect(repository.restore).toHaveBeenCalledWith(ownerA, "opportunity-1", 2);
   });
 });

@@ -1,7 +1,7 @@
 ﻿import type { Prisma, Opportunity } from "@prisma/client";
 import type { LifecycleStateKey } from "@prisma/client";
 import { ConflictError } from "@/lib/domain/errors";
-
+import { NotFoundError } from "@/lib/domain/errors";
 import { prisma } from "@/lib/db";
 import {
   lifecycleStatusOwnerWhere,
@@ -206,6 +206,33 @@ export class OpportunityRepository {
       },
       data: {
         archivedAt: new Date(),
+        version: {
+          increment: 1,
+        },
+      },
+    });
+
+    this.assertConcurrencySuccess(result.count, opportunityId, expectedVersion);
+
+    return this.getByIdOrThrow(ownerId, opportunityId);
+  }
+
+  async restore(
+    ownerId: string,
+    opportunityId: string,
+    expectedVersion: number,
+  ) {
+    const result = await prisma.opportunity.updateMany({
+      where: {
+        id: opportunityId,
+        ...opportunityOwnerWhere(ownerId),
+        version: expectedVersion,
+        archivedAt: {
+          not: null,
+        },
+      },
+      data: {
+        archivedAt: null,
         version: {
           increment: 1,
         },

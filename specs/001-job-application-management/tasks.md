@@ -253,7 +253,7 @@
 
 - [x] T101 Implement portable ZIP export containing structured data, lifecycle history, events, actions, scheduled events, communications, Artefact metadata, provider references, and retrievable authorized binaries in `lib/services/export-service.ts` and `app/api/exports/route.ts`
 - [x] T102 Include explicit manifest entries for authorized Artefacts whose external binaries are unavailable during export
-- [ ] T103 Implement Opportunity and Artefact archive/restore behavior in the relevant domain services and API routes
+- [x] T103 Implement Opportunity and Artefact archive/restore behavior in the relevant domain services and API routes
 - [ ] T104 Implement permanent-deletion preview and explicit confirmation with relationship analysis in `lib/services/deletion-service.ts`
 - [ ] T105 Ensure destructive operations preserve the required audit trail and fail safely when external Artefact references cannot be removed or verified
 
