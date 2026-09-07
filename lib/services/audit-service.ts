@@ -85,6 +85,7 @@ export interface AuditEventInput {
   metadata?: Record<string, unknown>;
 }
 
+/*
 export async function recordAuditEvent(input: AuditEventInput): Promise<void> {
   const metadata = sanitizeAuditMetadata(input.metadata);
 
@@ -101,4 +102,27 @@ export async function recordAuditEvent(input: AuditEventInput): Promise<void> {
   } catch (error) {
     console.error("Failed to write audit event", error);
   }
+}*/
+
+export async function recordAuditEvent(input: AuditEventInput) {
+  try {
+    return await recordAuditEventStrict(input);
+  } catch (error) {
+    console.error("Failed to record audit event", error);
+    return null;
+  }
+}
+
+export async function recordAuditEventStrict(input: AuditEventInput) {
+  const sanitizedMetadata = sanitizeAuditMetadata(input.metadata);
+
+  return prisma.auditEvent.create({
+    data: {
+      ownerId: input.ownerId,
+      type: input.type,
+      targetType: input.targetType,
+      targetId: input.targetId,
+      metadata: sanitizedMetadata,
+    },
+  });
 }

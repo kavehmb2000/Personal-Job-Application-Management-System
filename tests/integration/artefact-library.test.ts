@@ -1,9 +1,9 @@
 ﻿import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { ArtefactType } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { ArtefactRepository } from "@/lib/repositories/artefact-repository";
 import { ArtefactService } from "@/lib/services/artefact-service";
+import { ArtefactType, AuditEventType } from "@prisma/client";
 
 describe("Artefact library", () => {
   const ownerId = "00000000-0000-0000-0000-000000000001";
@@ -27,6 +27,14 @@ describe("Artefact library", () => {
 
   afterEach(async () => {
     await prisma.artefact.deleteMany({
+      where: {
+        ownerId: {
+          in: [ownerId, otherOwnerId],
+        },
+      },
+    });
+
+    await prisma.auditEvent.deleteMany({
       where: {
         ownerId: {
           in: [ownerId, otherOwnerId],
@@ -448,6 +456,61 @@ describe("Artefact library", () => {
       const activeArtefacts = await service.list(ownerId);
 
       expect(activeArtefacts).toHaveLength(0);
+    });
+
+    it("records an audit event when an artefact is archived", async () => {
+      await createOwner(
+        ownerId,
+        "library-owner@example.com",
+        "google-subject-owner",
+      );
+
+      const artefact = await service.create(ownerId, {
+        name: "Audit Archive CV",
+        type: ArtefactType.CV,
+        contentMarkdown: "# Audit Archive CV",
+      });
+
+      await service.archive(ownerId, artefact.id);
+
+      const auditEvents = await prisma.auditEvent.findMany({
+        where: {
+          ownerId,
+          type: AuditEventType.ARCHIVE,
+          targetType: "Artefact",
+          targetId: artefact.id,
+        },
+      });
+
+      expect(auditEvents).toHaveLength(1);
+    });
+
+    it("records an audit event when an artefact is restored", async () => {
+      await createOwner(
+        ownerId,
+        "library-owner@example.com",
+        "google-subject-owner",
+      );
+
+      const artefact = await service.create(ownerId, {
+        name: "Audit Restore CV",
+        type: ArtefactType.CV,
+        contentMarkdown: "# Audit Restore CV",
+      });
+
+      await service.archive(ownerId, artefact.id);
+      await service.restore(ownerId, artefact.id);
+
+      const auditEvents = await prisma.auditEvent.findMany({
+        where: {
+          ownerId,
+          type: AuditEventType.RESTORE,
+          targetType: "Artefact",
+          targetId: artefact.id,
+        },
+      });
+
+      expect(auditEvents).toHaveLength(1);
     });
   });
 

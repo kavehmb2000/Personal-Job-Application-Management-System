@@ -1,7 +1,9 @@
-﻿import { afterAll, beforeAll, describe, expect, it } from "vitest";
+﻿import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { prisma } from "@/lib/db";
+import { AuditEventType } from "@prisma/client";
 import { OpportunityRepository } from "@/lib/repositories/opportunity-repository";
+import { OpportunityService } from "@/lib/services/opportunity-service";
 
 describe("Opportunity archive and restore", () => {
   let ownerA: string;
@@ -12,7 +14,27 @@ describe("Opportunity archive and restore", () => {
   let opportunityB: string;
 
   const repository = new OpportunityRepository();
+  const service = new OpportunityService(repository);
   const testRunId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  beforeEach(async () => {
+    await prisma.opportunity.update({
+      where: {
+        id: opportunityA,
+      },
+      data: {
+        archivedAt: null,
+      },
+    });
+
+    await prisma.auditEvent.deleteMany({
+      where: {
+        ownerId: {
+          in: [ownerA, ownerB],
+        },
+      },
+    });
+  });
 
   beforeAll(async () => {
     const ownerRecordA = await prisma.ownerAccount.create({
@@ -106,6 +128,14 @@ describe("Opportunity archive and restore", () => {
       },
     });
 
+    await prisma.auditEvent.deleteMany({
+      where: {
+        ownerId: {
+          in: [ownerA, ownerB],
+        },
+      },
+    });
+
     await prisma.ownerAccount.deleteMany({
       where: {
         id: {
@@ -140,12 +170,70 @@ describe("Opportunity archive and restore", () => {
     );
   });
 
-  it("restores an archived opportunity and returns it to the active list", async () => {
+  it("records an audit event when an opportunity is archived", async () => {
+    const opportunity = await prisma.opportunity.findUniqueOrThrow({
+      where: {
+        id: opportunityA,
+      },
+    });
+
+    await service.archive(ownerA, opportunityA, opportunity.version);
+
+    const events = await prisma.auditEvent.findMany({
+      where: {
+        ownerId: ownerA,
+        type: AuditEventType.ARCHIVE,
+        targetType: "Opportunity",
+        targetId: opportunityA,
+      },
+    });
+
+    expect(events).toHaveLength(1);
+  });
+
+  it("records an audit event when an opportunity is restored", async () => {
+    const opportunity = await prisma.opportunity.findUniqueOrThrow({
+      where: {
+        id: opportunityA,
+      },
+    });
+
+    if (opportunity.archivedAt === null) {
+      await repository.archive(ownerA, opportunityA, opportunity.version);
+    }
+
     const archived = await prisma.opportunity.findUniqueOrThrow({
       where: {
         id: opportunityA,
       },
     });
+
+    await service.restore(ownerA, opportunityA, archived.version);
+
+    const events = await prisma.auditEvent.findMany({
+      where: {
+        ownerId: ownerA,
+        type: AuditEventType.RESTORE,
+        targetType: "Opportunity",
+        targetId: opportunityA,
+      },
+    });
+
+    expect(events).toHaveLength(1);
+  });
+
+  it("restores an archived opportunity and returns it to the active list", async () => {
+    const active = await prisma.opportunity.findUniqueOrThrow({
+      where: {
+        id: opportunityA,
+      },
+    });
+
+    const archived = await repository.archive(
+      ownerA,
+      opportunityA,
+      active.version,
+    );
 
     expect(archived.archivedAt).not.toBeNull();
 
@@ -154,6 +242,8 @@ describe("Opportunity archive and restore", () => {
       opportunityA,
       archived.version,
     );
+
+    expect(archived.archivedAt).not.toBeNull();
 
     expect(restored.id).toBe(opportunityA);
     expect(restored.archivedAt).toBeNull();

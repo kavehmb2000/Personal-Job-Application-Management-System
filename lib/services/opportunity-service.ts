@@ -3,9 +3,8 @@
   UpdateOpportunityInput,
 } from "@/lib/repositories/opportunity-repository";
 import { OpportunityRepository } from "@/lib/repositories/opportunity-repository";
-import type { LifecycleStateKey } from "@prisma/client";
-import { prisma } from "@/lib/db";
-import { NotFoundError } from "@/lib/domain/errors";
+import { AuditEventType, type LifecycleStateKey } from "@prisma/client";
+import { recordAuditEvent } from "@/lib/services/audit-service";
 
 export class OpportunityService {
   constructor(private readonly repository: OpportunityRepository) {}
@@ -47,7 +46,20 @@ export class OpportunityService {
     opportunityId: string,
     expectedVersion: number,
   ) {
-    return this.repository.archive(ownerId, opportunityId, expectedVersion);
+    const opportunity = await this.repository.archive(
+      ownerId,
+      opportunityId,
+      expectedVersion,
+    );
+
+    await recordAuditEvent({
+      ownerId,
+      type: AuditEventType.ARCHIVE,
+      targetType: "Opportunity",
+      targetId: opportunityId,
+    });
+
+    return opportunity;
   }
 
   async restore(
@@ -55,6 +67,19 @@ export class OpportunityService {
     opportunityId: string,
     expectedVersion: number,
   ) {
-    return this.repository.restore(ownerId, opportunityId, expectedVersion);
+    const opportunity = await this.repository.restore(
+      ownerId,
+      opportunityId,
+      expectedVersion,
+    );
+
+    await recordAuditEvent({
+      ownerId,
+      type: AuditEventType.RESTORE,
+      targetType: "Opportunity",
+      targetId: opportunityId,
+    });
+
+    return opportunity;
   }
 }

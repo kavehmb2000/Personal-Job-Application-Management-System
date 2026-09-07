@@ -1,5 +1,6 @@
 ﻿import { ArtefactRepository } from "@/lib/repositories/artefact-repository";
-import { ArtefactType } from "@prisma/client";
+import { ArtefactType, AuditEventType } from "@prisma/client";
+import { recordAuditEvent } from "@/lib/services/audit-service";
 import type {
   StorageFileContent,
   StorageFileMetadata,
@@ -104,11 +105,29 @@ export class ArtefactService {
   }
 
   async archive(ownerId: string, artefactId: string) {
-    return this.repository.archive(ownerId, artefactId);
+    const artefact = await this.repository.archive(ownerId, artefactId);
+
+    await recordAuditEvent({
+      ownerId,
+      type: AuditEventType.ARCHIVE,
+      targetType: "Artefact",
+      targetId: artefactId,
+    });
+
+    return artefact;
   }
 
   async restore(ownerId: string, artefactId: string) {
-    return this.repository.restore(ownerId, artefactId);
+    const artefact = await this.repository.restore(ownerId, artefactId);
+
+    await recordAuditEvent({
+      ownerId,
+      type: AuditEventType.RESTORE,
+      targetType: "Artefact",
+      targetId: artefactId,
+    });
+
+    return artefact;
   }
 
   async list(
