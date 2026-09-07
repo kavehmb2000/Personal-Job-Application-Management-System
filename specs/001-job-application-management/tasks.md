@@ -246,7 +246,7 @@
 ### Tests
 
 - [x] T098 [P] Add export integration tests covering structured domain data, lifecycle history, events, actions, scheduled events, communications, Artefact metadata, provider references, and retrievable binaries in `tests/integration/export-service.test.ts`
-- [ ] T099 [P] Add archive/restore/permanent-deletion tests covering historical relationships, explicit confirmation, owner isolation, and failure-safe behavior in `tests/integration/deletion-service.test.ts`
+- [x] T099 [P] Add archive/restore/permanent-deletion tests covering historical relationships, explicit confirmation, owner isolation, and failure-safe behavior in `tests/integration/deletion-service.test.ts`
 - [x] T100 [P] Add audit coverage for sign-in, denied access, export, archive, restore, permanent deletion, and Drive authorization changes in `tests/integration/audit-events.test.ts`
 
 ### Implementation
@@ -254,7 +254,7 @@
 - [x] T101 Implement portable ZIP export containing structured data, lifecycle history, events, actions, scheduled events, communications, Artefact metadata, provider references, and retrievable authorized binaries in `lib/services/export-service.ts` and `app/api/exports/route.ts`
 - [x] T102 Include explicit manifest entries for authorized Artefacts whose external binaries are unavailable during export
 - [x] T103 Implement Opportunity and Artefact archive/restore behavior in the relevant domain services and API routes
-- [ ] T104 Implement permanent-deletion preview and explicit confirmation with relationship analysis in `lib/services/deletion-service.ts`
+- [x] T104 Implement permanent-deletion preview and explicit confirmation with relationship analysis in `lib/services/deletion-service.ts`
 - [x] T105 Ensure destructive operations preserve the required audit trail and fail safely when external Artefact references cannot be removed or verified
 
 **Checkpoint**: The user can export, archive, restore, and explicitly delete data without silently losing historical relationships.

@@ -1,6 +1,7 @@
 import type { AuditEventType, Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
+import type { PrismaClient } from "@prisma/client";
 
 const SENSITIVE_KEYS = new Set([
   "password",
@@ -113,10 +114,13 @@ export async function recordAuditEvent(input: AuditEventInput) {
   }
 }
 
-export async function recordAuditEventStrict(input: AuditEventInput) {
+export async function recordAuditEventStrict(
+  input: AuditEventInput,
+  db: PrismaClient | Prisma.TransactionClient = prisma,
+) {
   const sanitizedMetadata = sanitizeAuditMetadata(input.metadata);
 
-  return prisma.auditEvent.create({
+  return db.auditEvent.create({
     data: {
       ownerId: input.ownerId,
       type: input.type,
