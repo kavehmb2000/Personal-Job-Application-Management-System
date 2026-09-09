@@ -40,6 +40,8 @@ export function KanbanBoard({ initialBoard }: KanbanBoardProps) {
   const [error, setError] = useState<string | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [mobileColumn, setMobileColumn] =
+    useState<(typeof KANBAN_COLUMNS)[number]>("DISCOVERED");
 
   async function moveCard(card: KanbanCard, toStatus: KanbanLifecycleState) {
     setError(null);
@@ -149,6 +151,7 @@ export function KanbanBoard({ initialBoard }: KanbanBoardProps) {
         {!isCreating ? (
           <button
             type="button"
+            className="ui-button ui-button-primary"
             onClick={() => {
               setError(null);
               setIsCreating(true);
@@ -174,32 +177,95 @@ export function KanbanBoard({ initialBoard }: KanbanBoardProps) {
         </p>
       ) : null}
 
-      <div
-        className="grid gap-4 md:grid-cols-2 lg:grid-cols-5"
-        aria-label="Opportunity lifecycle columns"
-      >
-        {board.columns.map((column) => (
-          <section key={column.key} aria-labelledby={`kanban-${column.key}`}>
-            <h2 id={`kanban-${column.key}`}>{COLUMN_LABELS[column.key]}</h2>
+      <>
+        {/* Mobile lifecycle navigation */}
+        <div className="lg:hidden">
+          <div
+            role="tablist"
+            aria-label="Opportunity lifecycle columns"
+            className="flex gap-2 overflow-x-auto pb-2"
+          >
+            {KANBAN_COLUMNS.map((columnKey) => {
+              const isSelected = mobileColumn === columnKey;
 
-            <div className="mt-2 space-y-3">
-              {column.cards.map((card) => (
-                <KanbanCardView
-                  key={card.id}
-                  card={card}
-                  moving={movingId === card.id}
+              return (
+                <button
+                  key={columnKey}
+                  id={`kanban-mobile-tab-${columnKey}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={isSelected}
+                  aria-controls={`kanban-mobile-panel-${columnKey}`}
+                  tabIndex={isSelected ? 0 : -1}
+                  className="min-h-11 shrink-0 px-4"
+                  onClick={() => setMobileColumn(columnKey)}
+                >
+                  {COLUMN_LABELS[columnKey]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Responsive lifecycle board */}
+        <div
+          className="grid gap-4 lg:grid-cols-5"
+          aria-label="Opportunity lifecycle columns"
+        >
+          {board.columns.map((column) => {
+            const isMobileSelected = column.key === mobileColumn;
+
+            return (
+              <div
+                key={column.key}
+                className={isMobileSelected ? "block" : "hidden lg:block"}
+              >
+                <KanbanColumnView
+                  column={column}
+                  movingId={movingId}
                   onMove={moveCard}
                 />
-              ))}
+              </div>
+            );
+          })}
+        </div>
+      </>
+    </section>
+  );
+}
 
-              {column.cards.length === 0 ? (
-                <p className="text-sm" aria-label="No Opportunities">
-                  No Opportunities
-                </p>
-              ) : null}
-            </div>
-          </section>
+interface KanbanColumnViewProps {
+  column: KanbanBoardData["columns"][number];
+  movingId: string | null;
+  onMove: (card: KanbanCard, toStatus: KanbanLifecycleState) => Promise<void>;
+  id?: string;
+}
+
+function KanbanColumnView({
+  column,
+  movingId,
+  onMove,
+  id,
+}: KanbanColumnViewProps) {
+  return (
+    <section aria-labelledby={`kanban-${column.key}`} id={id}>
+      <h2 id={`kanban-${column.key}`}>{COLUMN_LABELS[column.key]}</h2>
+
+      <div className="mt-2 space-y-3">
+        {column.cards.map((card) => (
+          <KanbanCardView
+            key={card.id}
+            card={card}
+            moving={movingId === card.id}
+            onMove={onMove}
+          />
         ))}
+
+        {column.cards.length === 0 ? (
+          <p className="text-sm" aria-label="No Opportunities">
+            No Opportunities
+          </p>
+        ) : null}
       </div>
     </section>
   );
@@ -230,7 +296,7 @@ function KanbanCardView({ card, moving, onMove }: KanbanCardViewProps) {
         <p>
           Next: {card.nextScheduledEvent.title}{" "}
           <time dateTime={card.nextScheduledEvent.scheduledAt.toISOString()}>
-            {card.nextScheduledEvent.scheduledAt.toLocaleString()}
+            {card.nextScheduledEvent.scheduledAt.toISOString()}
           </time>
         </p>
       ) : null}

@@ -273,8 +273,8 @@
 
 ### Implementation
 
-- [ ] T109 Implement responsive Kanban and Opportunity Workspace layouts with accessible mobile navigation in `components/opportunities/`
-- [ ] T110 Implement mobile quick-entry controls for Opportunity creation, lifecycle transition, OpportunityEvent, OpportunityNote, UserAction, and ScheduledEvent creation in `components/opportunities/mobile-entry-sheet.tsx`
+- [x] T109 Implement responsive Kanban and Opportunity Workspace layouts with accessible mobile navigation in `components/opportunities/`
+- [x] T110 Implement mobile quick-entry controls for Opportunity creation, lifecycle transition, OpportunityEvent, OpportunityNote, UserAction, and ScheduledEvent creation in `components/opportunities/mobile-entry-sheet.tsx`
 - [ ] T111 Implement bounded read-only caching for the app shell and previously viewed critical Opportunity/workspace data in `lib/offline/cache-policy.ts` and the service-worker configuration
 - [ ] T112 Implement stale-data indication and offline read-only presentation in `components/shared/connection-status.tsx` and the relevant Workspace components
 - [ ] T113 Block all mutations while offline and provide no mutation queue or synchronization path in `lib/offline/mutation-guard.ts`
