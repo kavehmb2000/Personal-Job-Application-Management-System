@@ -30,7 +30,8 @@ export function ConnectionStatus() {
       role="status"
       aria-live="polite"
     >
-      You are offline. Changes cannot be saved until the connection is restored.
+      <strong>Offline.</strong> Previously viewed information may be shown from
+      cache. Changes cannot be saved until the connection is restored.
     </div>
   );
 }
