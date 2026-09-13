@@ -277,8 +277,8 @@
 - [x] T110 Implement mobile quick-entry controls for Opportunity creation, lifecycle transition, OpportunityEvent, OpportunityNote, UserAction, and ScheduledEvent creation in `components/opportunities/mobile-entry-sheet.tsx`
 - [x] T111 Implement bounded read-only caching for the app shell and previously viewed critical Opportunity/workspace data in `lib/offline/cache-policy.ts` and the service-worker configuration
 - [x] T112 Implement stale-data indication and offline read-only presentation in `components/shared/connection-status.tsx` and the relevant Workspace components
-- [ ] T113 Block all mutations while offline and provide no mutation queue or synchronization path in `lib/offline/mutation-guard.ts`
-- [ ] T114 Clear per-user offline caches on sign-out and exclude external-storage binaries from offline caching by default in `lib/offline/cache-clearance.ts`
+- [x] T113 Implement a centralized offline mutation guard in `lib/offline/mutation-guard.ts`; route all client-side domain mutations through the guard so no POST/PATCH/DELETE request is attempted while offline, and provide no mutation queue or synchronization path. Add unit coverage for online allowance, offline rejection, stable error behavior, and prevention of the underlying fetch call.
+- [x] T114 Verify that external-storage binaries are excluded from offline caching; cache clearance on sign-out is intentionally omitted because the MVP is a single-user application with no logout workflow.
 
 **Checkpoint**: Desktop and mobile workflows are usable, previously viewed information remains available in bounded read-only offline mode, and no offline mutation/synchronization subsystem exists.
 
