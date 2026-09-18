@@ -5,7 +5,7 @@ info:
   version: 1.0.0
   description: >
     Version 1 API for the single-user Personal Job Application Management
-    System. The API exposes the owner-scoped Opportunity workspace and its
+    System. The API exposes the owner-scoped Opportunity resources and their
     supporting resources. Lifecycle transitions, submission, optimistic
     concurrency, and storage operations are enforced by the application
     service layer.
@@ -20,7 +20,6 @@ tags:
   - name: Submission
   - name: Events
   - name: Notes
-  - name: Workspace
   - name: User Actions
   - name: Scheduled Events
   - name: Contacts
@@ -407,35 +406,6 @@ paths:
       responses:
         '204':
           description: Note deleted
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  # ===========================================================================
-  # Workspace
-  # ===========================================================================
-
-  /opportunities/{opportunityId}/workspace:
-    parameters:
-      - $ref: '#/components/parameters/OpportunityId'
-
-    get:
-      tags: [Workspace]
-      operationId: getOpportunityWorkspace
-      summary: Get the complete opportunity workspace
-      description: >
-        Returns the composed Opportunity Workspace read model, including the
-        opportunity, current state, next action, next scheduled event, notes,
-        events, submission, artefacts, actions, scheduled events, contacts, and
-        communications.
-      responses:
-        '200':
-          description: Opportunity workspace
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OpportunityWorkspace'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -1871,75 +1841,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/OpportunityNote'
-
-    # =========================================================================
-    # Workspace
-    # =========================================================================
-
-    OpportunityWorkspace:
-      type: object
-      required:
-        - opportunity
-        - currentState
-        - nextAction
-        - nextActionDueAt
-        - nextScheduledEvent
-        - notes
-        - events
-        - submission
-        - artefacts
-        - actions
-        - scheduledEvents
-        - contacts
-        - communications
-      properties:
-        opportunity:
-          $ref: '#/components/schemas/Opportunity'
-        currentState:
-          $ref: '#/components/schemas/LifecycleStatus'
-        nextAction:
-          type: string
-          nullable: true
-        nextActionDueAt:
-          type: string
-          format: date-time
-          nullable: true
-        nextScheduledEvent:
-          allOf:
-            - $ref: '#/components/schemas/ScheduledEvent'
-          nullable: true
-        notes:
-          type: array
-          items:
-            $ref: '#/components/schemas/OpportunityNote'
-        events:
-          type: array
-          items:
-            $ref: '#/components/schemas/OpportunityEvent'
-        submission:
-          allOf:
-            - $ref: '#/components/schemas/Submission'
-          nullable: true
-        artefacts:
-          type: array
-          items:
-            $ref: '#/components/schemas/Artefact'
-        actions:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserAction'
-        scheduledEvents:
-          type: array
-          items:
-            $ref: '#/components/schemas/ScheduledEvent'
-        contacts:
-          type: array
-          items:
-            $ref: '#/components/schemas/Contact'
-        communications:
-          type: array
-          items:
-            $ref: '#/components/schemas/Communication'
 
     # =========================================================================
     # User Actions
