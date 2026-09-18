@@ -34,6 +34,7 @@ describe("Communication routes", () => {
     await prisma.communicationArtefact.deleteMany();
     await prisma.communication.deleteMany();
     await prisma.eventArtefact.deleteMany();
+    await prisma.opportunityArtefact.deleteMany();
     await prisma.artefact.deleteMany();
     await prisma.scheduledEventContact.deleteMany();
     await prisma.scheduledEvent.deleteMany();

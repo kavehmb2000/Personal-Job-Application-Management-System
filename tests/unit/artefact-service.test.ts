@@ -17,6 +17,9 @@ describe("ArtefactService", () => {
     getById: vi.fn(),
     archive: vi.fn(),
     restore: vi.fn(),
+    addToOpportunity: vi.fn(),
+    removeFromOpportunity: vi.fn(),
+    getForOpportunity: vi.fn(),
   };
 
   let service: ArtefactService;
@@ -163,6 +166,20 @@ describe("ArtefactService", () => {
       ownerId: ownerB,
     });
 
+    repository.addToOpportunity.mockResolvedValue({
+      id: "association-1",
+      opportunityId: "opportunity-1",
+      artefactId: "artefact-1",
+    });
+
+    repository.removeFromOpportunity.mockResolvedValue({
+      id: "association-1",
+      opportunityId: "opportunity-1",
+      artefactId: "artefact-1",
+    });
+
+    repository.getForOpportunity.mockResolvedValue([]);
+
     await service.create(ownerB, {
       name: "CV",
       type: "CV",
@@ -173,9 +190,31 @@ describe("ArtefactService", () => {
 
     await service.archive(ownerB, "artefact-1");
 
+    await service.addToOpportunity(ownerB, "opportunity-1", "artefact-1");
+
+    await service.removeFromOpportunity(ownerB, "opportunity-1", "artefact-1");
+
+    await service.getForOpportunity(ownerB, "opportunity-1");
+
     expect(repository.create).toHaveBeenCalledWith(ownerB, expect.any(Object));
     expect(repository.getById).toHaveBeenCalledWith(ownerB, "artefact-1");
     expect(repository.archive).toHaveBeenCalledWith(ownerB, "artefact-1");
+    expect(repository.addToOpportunity).toHaveBeenCalledWith(
+      ownerB,
+      "opportunity-1",
+      "artefact-1",
+    );
+
+    expect(repository.removeFromOpportunity).toHaveBeenCalledWith(
+      ownerB,
+      "opportunity-1",
+      "artefact-1",
+    );
+
+    expect(repository.getForOpportunity).toHaveBeenCalledWith(
+      ownerB,
+      "opportunity-1",
+    );
   });
 
   it("translates the persisted provider into a provider-neutral storage reference", async () => {
@@ -327,5 +366,78 @@ describe("ArtefactService", () => {
     ).rejects.toThrow("Unsupported storage provider: DROPBOX");
 
     expect(resolver.resolve).not.toHaveBeenCalled();
+  });
+
+  it("adds an Artefact to an Opportunity within the owner's scope", async () => {
+    const association = {
+      id: "opportunity-artefact-1",
+      opportunityId: "opportunity-1",
+      artefactId: "artefact-1",
+    };
+
+    repository.addToOpportunity.mockResolvedValue(association);
+
+    const result = await service.addToOpportunity(
+      ownerA,
+      "opportunity-1",
+      "artefact-1",
+    );
+
+    expect(repository.addToOpportunity).toHaveBeenCalledWith(
+      ownerA,
+      "opportunity-1",
+      "artefact-1",
+    );
+    expect(result).toBe(association);
+  });
+
+  it("removes an Artefact from an Opportunity within the owner's scope", async () => {
+    const association = {
+      id: "opportunity-artefact-1",
+      opportunityId: "opportunity-1",
+      artefactId: "artefact-1",
+    };
+
+    repository.removeFromOpportunity.mockResolvedValue(association);
+
+    const result = await service.removeFromOpportunity(
+      ownerA,
+      "opportunity-1",
+      "artefact-1",
+    );
+
+    expect(repository.removeFromOpportunity).toHaveBeenCalledWith(
+      ownerA,
+      "opportunity-1",
+      "artefact-1",
+    );
+    expect(result).toBe(association);
+  });
+
+  it("gets the Artefacts associated with an Opportunity within the owner's scope", async () => {
+    const artefacts = [
+      {
+        id: "artefact-1",
+        ownerId: ownerA,
+        name: "CV",
+        type: "CV",
+      },
+      {
+        id: "artefact-2",
+        ownerId: ownerA,
+        name: "Cover Letter",
+        type: "COVER_LETTER",
+      },
+    ];
+
+    repository.getForOpportunity.mockResolvedValue(artefacts);
+
+    const result = await service.getForOpportunity(ownerA, "opportunity-1");
+
+    expect(repository.getForOpportunity).toHaveBeenCalledWith(
+      ownerA,
+      "opportunity-1",
+    );
+    expect(result).toBe(artefacts);
   });
 });
