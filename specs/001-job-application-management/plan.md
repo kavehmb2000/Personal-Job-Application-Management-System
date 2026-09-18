@@ -49,7 +49,7 @@ The Opportunity context includes:
 * Contact
 * Communication
 
-Kanban, Workspace, search, and dashboard are derived projections/read models rather than additional aggregate roots.
+Kanban, the Opportunity detail/context view, search, and dashboard are derived projections/read models rather than additional aggregate roots.
 
 ### 2.3 Ownership
 
@@ -284,7 +284,7 @@ The MVP does not become a general-purpose CRM.
 
 ## Phase 7 — Opportunity Context and Service Composition
 
-**Purpose:** Provide a coherent Opportunity Workspace read model.
+**Purpose:** Provide a coherent Opportunity detail/context read model.
 
 This phase composes:
 
@@ -309,7 +309,7 @@ The composed context is exposed through service-level DTOs/read models so Prisma
 
 **Status:** Complete.
 
-**Checkpoint:** The Opportunity Workspace has one coherent context surface while preserving the semantic distinctions of the domain.
+**Checkpoint:** The Opportunity detail/context has one coherent context surface while preserving the semantic distinctions of the domain.
 
 ---
 
@@ -345,7 +345,7 @@ No API route should depend on the obsolete Application-centric model.
 
 ---
 
-## Phase 9 — Kanban, Workspace, Search, and Dashboard
+## Phase 9 — Kanban, Opportunity Detail, Search, and Dashboard
 
 **Purpose:** Build the primary operational UI around derived Opportunity projections.
 
@@ -362,7 +362,7 @@ This phase establishes:
 * Opportunity creation/editing
 * archive
 * lifecycle transition UI
-* responsive Opportunity Workspace
+* responsive Opportunity detail/context view
 * Opportunity detail route
 * PostgreSQL-native search
 * core search filters
@@ -451,11 +451,11 @@ External storage failures must not cause data to disappear silently from exports
 This phase establishes:
 
 * responsive Kanban
-* responsive Workspace
+* responsive Opportunity detail/context
 * accessible mobile navigation
 * mobile quick-entry controls
 * bounded read-only caching
-* previously viewed critical Opportunity/workspace data
+* previously viewed critical Opportunity detail data
 * stale-data indication
 * offline mutation blocking
 * per-user cache clearance
@@ -550,7 +550,7 @@ Phase 7 — Context / Service Composition
               ↓
 Phase 8 — API Contracts / HTTP
               ↓
-Phase 9 — Kanban / Workspace / Search / Dashboard
+Phase 9 — Kanban / Opportunity Detail / Search / Dashboard
               ├───────────────┐
               ↓               ↓
 Phase 10                    Phase 12
@@ -612,9 +612,9 @@ Implementation proceeds from stable foundations toward user-facing capabilities:
 4. Implement Opportunity lifecycle and historical events.
 5. Implement Submission and Artefacts.
 6. Implement operational context.
-7. Compose the Opportunity Workspace read model.
+7. Compose the Opportunity detail/context read model.
 8. Expose the domain through the API.
-9. Build Kanban, Workspace, search, and dashboard.
+9. Build Kanban, Opportunity detail, search, and dashboard.
 10. Integrate external storage.
 11. Implement export, archive, restore, deletion, and audit.
 12. Complete responsive/mobile and bounded offline read access.
@@ -627,7 +627,7 @@ The preferred delivery approach is vertical and test-driven:
 1. **Domain slice:** Opportunity → lifecycle → events → notes.
 2. **Submission/asset slice:** Submission → Artefacts → associations.
 3. **Operational-context slice:** actions → scheduled events → contacts → communications.
-4. **API/UI slice:** API → Kanban → Workspace → search/dashboard.
+4. **API/UI slice:** API → Kanban → Opportunity detail → search/dashboard.
 5. **Storage slice:** Google Drive → Artefact retrieval → export.
 6. **Device slice:** responsive/mobile → bounded offline read access.
 7. **Recovery/hardening slice:** archive/delete → audit → performance → accessibility → documentation.

@@ -441,7 +441,7 @@ Historical event:
 Interview scheduled
 ```
 
-The Opportunity workspace may present these together while preserving their semantic distinction.
+The Opportunity detail/context view may present these together while preserving their semantic distinction.
 
 ---
 
@@ -516,9 +516,9 @@ Terminal states may be visually grouped into `Closed / Terminal`.
 
 An accepted Offer remains in the Offer column and receives a visual distinction such as a badge/star.
 
-### 15.2 Opportunity Workspace
+### 15.2 Opportunity Detail and Context
 
-The workspace is the primary context surface.
+The Opportunity detail view is the primary context surface.
 
 It provides access to:
 

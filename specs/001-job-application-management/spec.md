@@ -620,9 +620,9 @@ The exact visual treatment is a UI decision and may be deferred.
 
 ---
 
-# 11. Opportunity Workspace
+# 11. Opportunity Detail and Context
 
-The Opportunity Workspace is the primary interaction surface.
+The Opportunity detail view is the primary interaction surface.The Opportunity detail view is the primary interaction surface for working with a specific Opportunity.
 
 It SHOULD provide:
 
@@ -639,7 +639,7 @@ It SHOULD provide:
 * submission information;
 * historical timeline.
 
-The Workspace should minimize navigation between disconnected records.
+The Opportunity detail view should minimize navigation between disconnected records.
 
 ---
 

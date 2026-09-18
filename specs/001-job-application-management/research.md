@@ -37,7 +37,7 @@ The Opportunity aggregate owns or relates to contextual records including:
 - `OpportunityContact`
 - `Communication`
 
-Derived views such as Kanban and Opportunity Workspace are read models, not additional aggregate roots.
+Derived views such as Kanban and Opportunity detail/context view are read models, not additional aggregate roots.
 
 ## 4. Lifecycle State Machine
 
@@ -138,13 +138,13 @@ Independently editable aggregate roots use optimistic concurrency. The client su
 
 The conflict protocol should return enough information for the client to refresh and allow the user to resolve the conflict. The design does not require a sophisticated merge engine for the MVP.
 
-## 11. Kanban, Workspace, Search, and Dashboard
+## 11. Kanban, Opportunity detail, Search, and Dashboard
 
-Kanban and Workspace are projections of the domain rather than separate persistence models.
+Kanban and the Opportunity detail/context view are projections of the domain rather than separate persistence models.
 
 The Kanban primarily communicates current lifecycle state. A card is intentionally concise and should focus on position, company, country/location, and next scheduled event. `Offer` remains a dedicated column; accepted offers remain there with a visual distinction.
 
-The Opportunity Workspace is the main context surface. It brings together job information, lifecycle state, next scheduled event, next actions, Artefacts, historical events, notes, communications, contacts, and related operational context.
+The Opportunity detail/context view is the main context surface. It brings together job information, lifecycle state, next scheduled event, next actions, Artefacts, historical events, notes, communications, contacts, and related operational context.
 
 Core MVP search/filter dimensions are:
 
