@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { OpportunityCreateForm } from "@/components/opportunities/opportunity-create-form";
-
+import { mutationFetch } from "@/lib/offline/mutation-guard";
 import {
   KANBAN_COLUMNS,
   type KanbanBoard as KanbanBoardData,
@@ -48,16 +48,19 @@ export function KanbanBoard({ initialBoard }: KanbanBoardProps) {
     setMovingId(card.id);
 
     try {
-      const response = await fetch(`/api/opportunities/${card.id}/transition`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "If-Match": `"${card.version}"`,
+      const response = await mutationFetch(
+        `/api/opportunities/${card.id}/transition`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "If-Match": `"${card.version}"`,
+          },
+          body: JSON.stringify({
+            toStatus,
+          }),
         },
-        body: JSON.stringify({
-          toStatus,
-        }),
-      });
+      );
 
       if (!response.ok) {
         throw new Error(

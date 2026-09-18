@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { FormEvent, useState } from "react";
+import { mutationFetch } from "@/lib/offline/mutation-guard";
 
 type LifecycleStatus =
   | "DISCOVERED"
@@ -122,7 +123,7 @@ export function MobileEntrySheet({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(url, {
+      const response = await mutationFetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

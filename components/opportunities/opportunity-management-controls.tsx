@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState } from "react";
-
+import { mutationFetch } from "@/lib/offline/mutation-guard";
 import { OpportunityEditForm } from "@/components/opportunities/opportunity-edit-form";
 import { Button } from "@/components/ui/button";
 
@@ -34,12 +34,15 @@ export function OpportunityManagementControls({
     setIsArchiving(true);
 
     try {
-      const response = await fetch(`/api/opportunities/${opportunity.id}`, {
-        method: "DELETE",
-        headers: {
-          "If-Match": `"${opportunity.version}"`,
+      const response = await mutationFetch(
+        `/api/opportunities/${opportunity.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "If-Match": `"${opportunity.version}"`,
+          },
         },
-      });
+      );
 
       if (!response.ok) {
         let message = "Unable to archive opportunity.";

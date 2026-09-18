@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState, type FormEvent } from "react";
-
+import { mutationFetch } from "@/lib/offline/mutation-guard";
 import { ArtefactType } from "@prisma/client";
 
 type ArtefactCreateFormProps = {
@@ -78,7 +78,7 @@ export function ArtefactCreateForm({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/artefacts", {
+      const response = await mutationFetch("/api/artefacts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

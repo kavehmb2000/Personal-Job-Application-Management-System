@@ -63,6 +63,12 @@ describe("Opportunity persistence", () => {
       },
     });
 
+    await prisma.artefact.deleteMany({
+      where: {
+        ownerId,
+      },
+    });
+
     await prisma.roleFamily.deleteMany({
       where: {
         ownerId,
@@ -365,5 +371,86 @@ describe("Opportunity persistence", () => {
     });
 
     expect(updated.version).toBe(2);
+  });
+
+  it("enforces at most one Submission per Opportunity at the database level", async () => {
+    const opportunity = await prisma.opportunity.create({
+      data: {
+        companyName: "Submission Uniqueness Company",
+        positionTitle: "Software Engineer",
+        owner: {
+          connect: {
+            id: ownerId,
+          },
+        },
+        status: {
+          connect: {
+            id: discoveredStatusId,
+          },
+        },
+      },
+    });
+
+    await prisma.submission.create({
+      data: {
+        opportunityId: opportunity.id,
+        submittedAt: new Date("2026-08-20T10:00:00.000Z"),
+        method: "PORTAL",
+      },
+    });
+
+    await expect(
+      prisma.submission.create({
+        data: {
+          opportunityId: opportunity.id,
+          submittedAt: new Date("2026-08-20T11:00:00.000Z"),
+          method: "EMAIL",
+        },
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("enforces unique Opportunity–Artefact associations", async () => {
+    const opportunity = await prisma.opportunity.create({
+      data: {
+        companyName: "Artefact Association Company",
+        positionTitle: "Software Engineer",
+        owner: {
+          connect: {
+            id: ownerId,
+          },
+        },
+        status: {
+          connect: {
+            id: discoveredStatusId,
+          },
+        },
+      },
+    });
+
+    const artefact = await prisma.artefact.create({
+      data: {
+        ownerId,
+        name: "CV",
+        type: "CV",
+        contentMarkdown: "# CV",
+      },
+    });
+
+    await prisma.opportunityArtefact.create({
+      data: {
+        opportunityId: opportunity.id,
+        artefactId: artefact.id,
+      },
+    });
+
+    await expect(
+      prisma.opportunityArtefact.create({
+        data: {
+          opportunityId: opportunity.id,
+          artefactId: artefact.id,
+        },
+      }),
+    ).rejects.toThrow();
   });
 });

@@ -1,5 +1,5 @@
 ﻿"use client";
-
+import { mutationFetch } from "@/lib/offline/mutation-guard";
 import { FormEvent, useState } from "react";
 
 type OpportunityCreateFormProps = {
@@ -45,7 +45,7 @@ export function OpportunityCreateForm({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/opportunities", {
+      const response = await mutationFetch("/api/opportunities", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

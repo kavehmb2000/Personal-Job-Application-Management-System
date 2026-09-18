@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { FormEvent, useState } from "react";
-
+import { mutationFetch } from "@/lib/offline/mutation-guard";
 import { Button } from "@/components/ui/button";
 
 type OpportunityEditFormProps = {
@@ -55,20 +55,23 @@ export function OpportunityEditForm({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`/api/opportunities/${opportunity.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "If-Match": `"${opportunity.version}"`,
+      const response = await mutationFetch(
+        `/api/opportunities/${opportunity.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "If-Match": `"${opportunity.version}"`,
+          },
+          body: JSON.stringify({
+            companyName: form.companyName.trim(),
+            positionTitle: form.positionTitle.trim(),
+            jobUrl: form.jobUrl.trim() || undefined,
+            location: form.location.trim() || undefined,
+            source: form.source.trim() || undefined,
+          }),
         },
-        body: JSON.stringify({
-          companyName: form.companyName.trim(),
-          positionTitle: form.positionTitle.trim(),
-          jobUrl: form.jobUrl.trim() || undefined,
-          location: form.location.trim() || undefined,
-          source: form.source.trim() || undefined,
-        }),
-      });
+      );
 
       if (!response.ok) {
         let message = "Unable to update opportunity.";
